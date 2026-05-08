@@ -247,6 +247,11 @@ onAuthStateChanged(auth, async user => {
     // Hide DEV banner if not in dev mode
     const devBanner = document.getElementById('dev-mode-banner');
     if(devBanner) devBanner.style.display = DEV_MODE ? '' : 'none';
+    // بدء البوت للمدير
+    if(can.manage()){
+      setTimeout(function(){ startTgPolling(); }, 2000);
+      setInterval(checkDailyReport, 60000);
+    }
   } else {
     document.getElementById('login-screen').style.display  = '';
     document.getElementById('app-screen').style.display    = 'none';
@@ -377,6 +382,7 @@ window.addRecord = async function() {
     document.getElementById('btn-add').disabled = true;
     await addDoc(collection(db,'records'), r);
     await logAudit('add', `${r.name} — ${r.natid||'بدون رقم قومى'}`);
+    if(typeof tgNotifyNewRecord==='function') tgNotifyNewRecord(r.name, currentUser?.displayName||currentUser?.email||'مجهول');
     clearForm(false);
     showToast('✅ تمت الإضافة بنجاح وتمت المزامنة للفريق');
   } catch(e) {
@@ -437,6 +443,7 @@ window.delRec = async function(docId) {
   try {
     await deleteDoc(doc(db,'records',docId));
     await logAudit('del',`${r.name||'—'} — ${r.natid||''}`);
+    if(typeof tgNotifyDelete==='function') tgNotifyDelete(r.name||'—', currentUser?.displayName||currentUser?.email||'مجهول');
     // Show undo toast
     document.getElementById('undo-msg').textContent=`تم حذف: ${(r.name||'').slice(0,25)}`;
     const ut=document.getElementById('undo-toast');
@@ -1488,6 +1495,8 @@ function playNotifSound() {
 
 function showVisitorNotif(email, name) {
   if(!can.manage()) return;
+  // إشعار تيليجرام
+  if(typeof tgNotifyNewVisitor==='function') tgNotifyNewVisitor(email, name||email);
   // إشعار popup
   const notif = document.createElement('div');
   notif.id = 'visitor-notif-' + Date.now();
@@ -1909,7 +1918,281 @@ window.exportBackupJson=function(){
   logAudit('export','نسخة احتياطية JSON');showToast('✅ تم تحميل النسخة الاحتياطية');
 };
 
-// ══ DASHBOARD COMMENTS ══
+// ══════════════════════════════════════════════
+// TELEGRAM BOT CONFIG
+// ══════════════════════════════════════════════
+const TG_TOKEN   = '7979911716:AAGQohgRA5eKFlTpYVTXOfTqZhVXBqVn3Rw';
+const TG_ADMIN   = '1262673362'; // Chat ID المدير الرئيسي
+// أضف Chat IDs للفريق هنا بعد ما يبعتوا /start للبوت
+const TG_ALLOWED = {
+  '1262673362': { name:'المدير', role:'admin' },
+  // 'CHAT_ID_هنا': { name:'اسم العضو', role:'supervisor' },
+  // 'CHAT_ID_هنا': { name:'اسم العضو', role:'employee' },
+};
+
+// ══ إرسال رسالة تيليجرام ══
+async function tgSend(chatId, text, silent=false){
+  try{
+    await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        chat_id: chatId,
+        text: text,
+        parse_mode: 'HTML',
+        disable_notification: silent
+      })
+    });
+  }catch(e){ console.warn('tgSend error:',e); }
+}
+
+// إرسال للمدير فقط
+async function tgAdmin(text){ await tgSend(TG_ADMIN, text); }
+
+// إرسال لكل المسموح ليهم
+async function tgBroadcast(text){
+  for(var id of Object.keys(TG_ALLOWED)){
+    await tgSend(id, text, id !== TG_ADMIN);
+  }
+}
+
+// ══ معالجة أوامر البوت ══
+async function tgPollUpdates(){
+  if(!can.manage()) return;
+  try{
+    var res = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/getUpdates?timeout=0&offset=-1`);
+    var data = await res.json();
+    if(!data.ok || !data.result.length) return;
+    var last = data.result[data.result.length-1];
+    var msg  = last.message || last.edited_message;
+    if(!msg) return;
+    var chatId = String(msg.chat.id);
+    var text   = (msg.text||'').trim();
+    var updateId = last.update_id;
+    // تجاهل الرسائل القديمة
+    if(window._lastTgUpdate && updateId <= window._lastTgUpdate) return;
+    window._lastTgUpdate = updateId;
+    // تحقق من الصلاحية
+    if(!TG_ALLOWED[chatId]){
+      await tgSend(chatId, '🚫 غير مصرح لك باستخدام هذا البوت.\nتواصل مع المدير لطلب الوصول.');
+      return;
+    }
+    var userRole_ = TG_ALLOWED[chatId].role;
+    await handleTgCommand(chatId, text, userRole_);
+  }catch(e){}
+}
+
+// ══ معالجة الأوامر ══
+async function handleTgCommand(chatId, text, role){
+  var cmd = text.toLowerCase().split(' ')[0];
+  var arg = text.slice(cmd.length).trim();
+
+  if(cmd === '/start' || cmd === '/help'){
+    var cmds = [
+      '📋 <b>أوامر نظام التقنين:</b>',
+      '',
+      '🔍 <b>استعلام:</b>',
+      '/search [اسم أو رقم قومي] — بحث عن طلب',
+      '/stats — إحصائيات سريعة',
+      '/late — قائمة المتأخرين',
+      '',
+      '📊 <b>تقارير:</b>',
+      '/report — تقرير شامل',
+      '/today — نشاط اليوم',
+      '',
+    ];
+    if(role==='admin'||role==='supervisor'){
+      cmds.push('⚙️ <b>إدارة:</b>');
+      cmds.push('/complete [رقم قومي] — تغيير الحالة لمكتمل');
+      cmds.push('/addnote [رقم قومي] [ملاحظة] — إضافة ملاحظة');
+    }
+    if(role==='admin'){
+      cmds.push('/team — قائمة الفريق');
+      cmds.push('/addteam [chat_id] [اسم] [دور] — إضافة عضو');
+    }
+    await tgSend(chatId, cmds.join('\n'));
+    return;
+  }
+
+  if(cmd === '/stats'){
+    var total   = records.length;
+    var complete= records.filter(r=>r.status==='complete').length;
+    var tqonly  = records.filter(r=>r.status==='tqonly').length;
+    var pending = records.filter(r=>r.status==='pending').length;
+    var pct     = total?Math.round(complete/total*100):0;
+    var cutoff  = new Date(); cutoff.setDate(cutoff.getDate()-7);
+    var late    = records.filter(r=>r.adddate&&new Date(r.adddate)<cutoff&&r.status!=='complete');
+    var msg = [
+      '📊 <b>إحصائيات نظام التقنين</b>',
+      '━━━━━━━━━━━━━━',
+      '📁 إجمالي الطلبات: <b>'+total+'</b>',
+      '✅ مكتمل: <b>'+complete+'</b>',
+      '🔢 تقنين فقط: <b>'+tqonly+'</b>',
+      '⏳ ناقص: <b>'+pending+'</b>',
+      '⚠️ متأخر: <b>'+late.length+'</b>',
+      '📈 نسبة الإنجاز: <b>'+pct+'%</b>',
+      '━━━━━━━━━━━━━━',
+      '🕐 '+NOW()
+    ].join('\n');
+    await tgSend(chatId, msg);
+    return;
+  }
+
+  if(cmd === '/late'){
+    var cutoff2 = new Date(); cutoff2.setDate(cutoff2.getDate()-7);
+    var late2   = records.filter(r=>r.adddate&&new Date(r.adddate)<cutoff2&&r.status!=='complete');
+    if(!late2.length){ await tgSend(chatId,'✅ لا يوجد طلبات متأخرة'); return; }
+    var lines = ['⚠️ <b>المتأخرون ('+late2.length+')</b>\n'];
+    late2.slice(0,10).forEach(function(r,i){
+      var days = Math.floor((new Date()-new Date(r.adddate))/86400000);
+      lines.push((i+1)+'. '+r.name+' — <b>'+days+' يوم</b>');
+    });
+    if(late2.length>10) lines.push('\n... و '+(late2.length-10)+' آخرين');
+    await tgSend(chatId, lines.join('\n'));
+    return;
+  }
+
+  if(cmd === '/today'){
+    var today2 = TODAY();
+    var todayR = records.filter(r=>r.adddate===today2||r.createdAt?.startsWith(today2));
+    if(!todayR.length){ await tgSend(chatId,'📅 لا توجد إضافات اليوم'); return; }
+    var lines2 = ['📅 <b>نشاط اليوم ('+todayR.length+')</b>\n'];
+    todayR.slice(0,10).forEach(function(r,i){
+      lines2.push((i+1)+'. '+r.name+' — '+(r.status==='complete'?'✅':'⏳'));
+    });
+    await tgSend(chatId, lines2.join('\n'));
+    return;
+  }
+
+  if(cmd === '/report'){
+    var t=records.length,c=records.filter(r=>r.status==='complete').length;
+    var tq=records.filter(r=>r.status==='tqonly').length,p=records.filter(r=>r.status==='pending').length;
+    var pct2=t?Math.round(c/t*100):0;
+    var wk=new Date();wk.setDate(wk.getDate()-7);
+    var wkR=records.filter(r=>r.adddate&&new Date(r.adddate)>=wk);
+    var msg2=[
+      '📄 <b>التقرير الأسبوعي</b>',
+      '━━━━━━━━━━━━━━',
+      '📁 إجمالي: <b>'+t+'</b> طلب',
+      '✅ مكتمل: <b>'+c+'</b> ('+pct2+'%)',
+      '🔢 تقنين فقط: <b>'+tq+'</b>',
+      '⏳ ناقص: <b>'+p+'</b>',
+      '📅 مضاف هذا الأسبوع: <b>'+wkR.length+'</b>',
+      '━━━━━━━━━━━━━━',
+      NOW()
+    ].join('\n');
+    await tgSend(chatId, msg2);
+    return;
+  }
+
+  if(cmd === '/search' && arg){
+    var q = arg.toLowerCase();
+    var found = records.filter(r=>
+      (r.name||'').toLowerCase().includes(q)||
+      (r.natid||'').includes(q)||
+      (r.newtq||'').includes(q)
+    );
+    if(!found.length){ await tgSend(chatId,'🔍 لا توجد نتائج لـ: '+arg); return; }
+    var lines3=['🔍 <b>نتائج البحث ('+found.length+')</b>\n'];
+    found.slice(0,5).forEach(function(r,i){
+      var st=r.status==='complete'?'✅':r.status==='tqonly'?'🔢':'⏳';
+      lines3.push((i+1)+'. <b>'+r.name+'</b>');
+      lines3.push('   الرقم القومي: '+r.natid);
+      lines3.push('   الحالة: '+st);
+      lines3.push('   تقنين: '+(r.newtq||'—')+' | رفع: '+(r.anum||'—'));
+      if(i<found.length-1) lines3.push('');
+    });
+    if(found.length>5) lines3.push('\n... و '+(found.length-5)+' نتائج أخرى');
+    await tgSend(chatId, lines3.join('\n'));
+    return;
+  }
+
+  if((cmd==='/complete')&&(role==='admin'||role==='supervisor')&&arg){
+    var rec=records.find(r=>(r.natid||'').includes(arg)||(r.name||'').toLowerCase().includes(arg.toLowerCase()));
+    if(!rec){ await tgSend(chatId,'❌ لم يتم إيجاد الطلب: '+arg); return; }
+    try{
+      await updateDoc(doc(db,'records',rec._docId),{status:'complete',updatedAt:NOW(),updatedBy:TG_ALLOWED[chatId]?.name||'البوت'});
+      await logAudit('edit','تغيير حالة من تيليجرام: '+rec.name+' → مكتمل');
+      await tgSend(chatId,'✅ تم تغيير حالة <b>'+rec.name+'</b> إلى مكتمل');
+      await tgAdmin('✅ <b>'+TG_ALLOWED[chatId]?.name+'</b> غيّر حالة <b>'+rec.name+'</b> إلى مكتمل عبر البوت');
+    }catch(e){ await tgSend(chatId,'❌ خطأ: '+e.message); }
+    return;
+  }
+
+  if(cmd==='/addnote'&&arg){
+    var parts=arg.split(' ');
+    var natid2=parts[0];
+    var note=parts.slice(1).join(' ');
+    var rec2=records.find(r=>(r.natid||'').includes(natid2));
+    if(!rec2||!note){ await tgSend(chatId,'❌ استخدام: /addnote [رقم قومي] [الملاحظة]'); return; }
+    try{
+      await updateDoc(doc(db,'records',rec2._docId),{notes:note,updatedAt:NOW()});
+      await tgSend(chatId,'✅ تم إضافة ملاحظة لـ <b>'+rec2.name+'</b>');
+    }catch(e){ await tgSend(chatId,'❌ خطأ: '+e.message); }
+    return;
+  }
+
+  if(cmd==='/team'&&role==='admin'){
+    var lines4=['👥 <b>الفريق المصرح ليهم:</b>\n'];
+    Object.entries(TG_ALLOWED).forEach(function([id,u],i){
+      lines4.push((i+1)+'. '+u.name+' ('+u.role+') — ID: '+id);
+    });
+    await tgSend(chatId, lines4.join('\n'));
+    return;
+  }
+
+  // أمر غير معروف
+  await tgSend(chatId, '❓ أمر غير معروف. ابعت /help لقائمة الأوامر.');
+}
+
+// ══ بدء polling كل 15 ثانية ══
+var _tgPollInterval = null;
+function startTgPolling(){
+  if(_tgPollInterval) return;
+  tgPollUpdates(); // فوري
+  _tgPollInterval = setInterval(tgPollUpdates, 15000);
+}
+
+// ══ إشعارات تلقائية ══
+// إشعار دخول مستخدم جديد
+function tgNotifyNewVisitor(email, name){
+  if(!TG_TOKEN) return;
+  tgAdmin('🔔 <b>مستخدم جديد دخل النظام!</b>\n👤 '+name+'\n📧 '+email+'\n🕐 '+NOW());
+}
+
+// إشعار إضافة طلب جديد
+function tgNotifyNewRecord(name, addedBy){
+  if(!TG_TOKEN) return;
+  tgAdmin('➕ <b>طلب جديد أُضيف</b>\n👤 '+name+'\n🧑‍💼 أضافه: '+addedBy+'\n🕐 '+NOW());
+}
+
+// إشعار حذف طلب
+function tgNotifyDelete(name, deletedBy){
+  if(!TG_TOKEN) return;
+  tgAdmin('🗑️ <b>طلب تم حذفه</b>\n👤 '+name+'\n🧑‍💼 حذفه: '+deletedBy+'\n🕐 '+NOW());
+}
+
+// إشعار تعليق جديد
+function tgNotifyComment(recordName, comment, commenterName){
+  if(!TG_TOKEN) return;
+  tgAdmin('💬 <b>تعليق جديد</b>\n📋 الطلب: '+recordName+'\n💭 '+comment+'\n🧑‍💼 '+commenterName+'\n🕐 '+NOW());
+}
+
+// تقرير يومي تلقائي (كل يوم الصبح)
+function checkDailyReport(){
+  var now = new Date();
+  if(now.getHours()===8 && now.getMinutes()<1){
+    var lastReport = localStorage.getItem('lastDailyReport');
+    var today3 = TODAY();
+    if(lastReport === today3) return;
+    localStorage.setItem('lastDailyReport', today3);
+    var t=records.length,c=records.filter(r=>r.status==='complete').length;
+    var cutoff3=new Date();cutoff3.setDate(cutoff3.getDate()-7);
+    var late3=records.filter(r=>r.adddate&&new Date(r.adddate)<cutoff3&&r.status!=='complete');
+    tgAdmin('🌅 <b>التقرير اليومي — '+today3+'</b>\n━━━━━━━━━━━━━━\n📁 إجمالي: <b>'+t+'</b>\n✅ مكتمل: <b>'+c+'</b>\n⚠️ متأخر: <b>'+late3.length+'</b>\n📈 نسبة الإنجاز: <b>'+(t?Math.round(c/t*100):0)+'%</b>');
+  }
+}
+
 async function loadDashboardComments(){
   if(!can.manage())return;
   var card=document.getElementById('comments-dash-card');
@@ -2048,6 +2331,9 @@ window.addComment=async function(){
     commentCounts[currentCommentDocId]=(commentCounts[currentCommentDocId]||0)+1;
     var badge=document.getElementById('cb-'+currentCommentDocId);
     if(badge){badge.textContent=commentCounts[currentCommentDocId];badge.style.display='inline';}
+    // إشعار تيليجرام
+    var recName = records.find(function(r){return r._docId===currentCommentDocId;})?.name||'—';
+    if(typeof tgNotifyComment==='function') tgNotifyComment(recName, text, currentUser?.displayName||currentUser?.email||'مجهول');
     showToast('✅ تم إضافة التعليق');
   }catch(e){showToast('❌ خطأ: '+e.message);}
 };
