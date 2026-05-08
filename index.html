@@ -1114,7 +1114,7 @@ window.renderTable=function(reset=false){
       <td>${sbadge(r.status)}</td>
       <td style="font-size:10px;color:var(--muted);">${r.createdName||r.createdBy||''}</td>
       <td onclick="event.stopPropagation()">${(userRole!=='viewer')?`<button class="print-btn" onclick="printCard('${r._docId}')" title="طباعة">🖨️</button>`:'—'}</td>
-      <td onclick="event.stopPropagation()">${canEd?`<button class="edit-btn" onclick="openEdit('${r._docId}')">✏️${commentCounts[r._docId]>0?` <span style="background:#e53935;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;">${commentCounts[r._docId]}</span>`:''} <span id="cb-${r._docId}" style="background:#e53935;color:#fff;border-radius:10px;padding:1px 5px;font-size:10px;display:none;"></span></button>`:'—'}</td>
+      <td onclick="event.stopPropagation()">${canEd?`<button class="edit-btn" onclick="openEdit('${r._docId}')">✏️<span id="cb-${r._docId}" style="background:#e53935;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-right:2px;${(commentCounts[r._docId]||0)>0?'':'display:none'}">${commentCounts[r._docId]||''}</span></button>`:'—'}</td>
       <td onclick="event.stopPropagation()">${canDel?`<button class="del-btn" onclick="delRec('${r._docId}')">🗑</button>`:'—'}</td>
     </tr>`;
   }).join('');
@@ -1947,7 +1947,13 @@ async function loadDashboardComments(){
   }catch(e){console.warn('loadDashboardComments:',e);}
 }
 
-// ══ DARK MODE ══
+document.addEventListener('click',function(e){
+  var menu=document.getElementById('actions-menu');
+  if(menu&&!e.target.closest('[onclick*="actions-menu"]')&&!e.target.closest('#actions-menu')){
+    menu.classList.remove('open-menu');
+  }
+});
+
 window.toggleDarkMode=function(){
   var isDark=document.body.classList.toggle('dark');
   document.getElementById('dark-toggle').textContent=isDark?'☀️':'🌙';
@@ -1993,18 +1999,10 @@ window.loadCommentCount=async function(docId){
     var snap=await getDocs(collection(db,'records',docId,'comments'));
     var prev=commentCounts[docId]||0;
     commentCounts[docId]=snap.size;
-    // حدّث الـ badge مباشرة لو موجود
     var badge=document.getElementById('cb-'+docId);
     if(badge){
       if(snap.size>0){badge.textContent=snap.size;badge.style.display='inline';}
       else{badge.style.display='none';}
-    }
-    // لو تغير العدد — أعد رسم الجدول
-    if(prev!==snap.size){
-      var btn=document.querySelector('[onclick*="openEdit(\''+docId+'\'"]');
-      if(btn&&snap.size>0){
-        btn.innerHTML='✏️ <span style="background:#e53935;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;">'+snap.size+'</span>';
-      }
     }
   }catch(e){}
 };
@@ -2047,10 +2045,9 @@ window.addComment=async function(){
     });
     if(input)input.value='';
     await window.loadComments(currentCommentDocId);
-    // تحديث العداد فوراً
     commentCounts[currentCommentDocId]=(commentCounts[currentCommentDocId]||0)+1;
-    var btn=document.querySelector('[onclick*="openEdit(\''+currentCommentDocId+'\'"]');
-    if(btn)btn.innerHTML='✏️ <span style="background:#e53935;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;">'+commentCounts[currentCommentDocId]+'</span>';
+    var badge=document.getElementById('cb-'+currentCommentDocId);
+    if(badge){badge.textContent=commentCounts[currentCommentDocId];badge.style.display='inline';}
     showToast('✅ تم إضافة التعليق');
   }catch(e){showToast('❌ خطأ: '+e.message);}
 };
@@ -2386,6 +2383,13 @@ body.dark .pg-waiting > div{background:#1E272E!important;}
 #dark-toggle:hover{transform:scale(1.1);}
 .adv-search-panel{background:var(--sky);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;display:none;}
 .adv-search-panel.open{display:block;}
+/* ══ ACTIONS DROPDOWN ══ */
+#actions-menu{display:none;}
+#actions-menu.open-menu{display:block!important;}
+#actions-menu button:hover{background:var(--sky)!important;}
+body.dark #actions-menu{background:#1E272E!important;border-color:#37474F!important;}
+body.dark #actions-menu button{color:#E0E0E0!important;}
+body.dark #actions-menu button:hover{background:#263238!important;}
 .adv-search-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
 @media(max-width:600px){.adv-search-grid{grid-template-columns:1fr;}}
 
@@ -2550,13 +2554,32 @@ body.dark .pg-waiting > div{background:#1E272E!important;}
 <div id="pg-records" class="page">
   <div class="card">
     <div class="card-header"><div class="card-header-left"><span class="icon">📋</span><h2>جميع السجلات</h2></div><span class="badge" id="countBadge">0</span></div>
-    <div class="filter-bar">
-      <label>بحث:</label><input type="text" id="f-search" placeholder="اسم / رقم / عنوان..." oninput="renderTable(true)" style="width:200px;">
-      <label>الحالة:</label><select id="f-status" onchange="renderTable(true)"><option value="">الكل</option><option value="complete">✅ مكتمل</option><option value="tqonly">🔢 تقنين فقط</option><option value="pending">⏳ ناقص</option></select>
-      <label>الترتيب:</label><select id="f-sort" onchange="renderTable(true)"><option value="newest">الأحدث</option><option value="oldest">الأقدم</option><option value="name">بالاسم</option><option value="deadline">بالموعد</option></select>
-      <label>القرية:</label><select id="f-village" onchange="renderTable(true)" style="max-width:130px;"><option value="">الكل</option></select>
-      <button class="btn btn-sm btn-outline" onclick="clearFilters()">✖ مسح</button>
-      <button class="btn btn-sm" style="background:var(--blue);color:#fff;" onclick="document.getElementById('adv-search-panel').classList.toggle('open')">🔍 بحث متقدم</button>
+    <div class="filter-bar" style="justify-content:space-between;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <label>بحث:</label><input type="text" id="f-search" placeholder="اسم / رقم / عنوان..." oninput="renderTable(true)" style="width:180px;">
+        <label>الحالة:</label><select id="f-status" onchange="renderTable(true)"><option value="">الكل</option><option value="complete">✅ مكتمل</option><option value="tqonly">🔢 تقنين فقط</option><option value="pending">⏳ ناقص</option></select>
+        <label>الترتيب:</label><select id="f-sort" onchange="renderTable(true)"><option value="newest">الأحدث</option><option value="oldest">الأقدم</option><option value="name">بالاسم</option><option value="deadline">بالموعد</option></select>
+        <label>القرية:</label><select id="f-village" onchange="renderTable(true)" style="max-width:120px;"><option value="">الكل</option></select>
+        <button class="btn btn-sm btn-outline" onclick="clearFilters()">✖ مسح</button>
+        <button class="btn btn-sm" style="background:var(--blue);color:#fff;" onclick="document.getElementById('adv-search-panel').classList.toggle('open')">🔍 بحث متقدم</button>
+      </div>
+      <!-- قائمة الإجراءات المنسدلة -->
+      <div style="position:relative;">
+        <button class="btn btn-sm btn-primary" onclick="document.getElementById('actions-menu').classList.toggle('open-menu')" style="gap:6px;">
+          ⚡ إجراءات <span style="font-size:10px;">▼</span>
+        </button>
+        <div id="actions-menu" style="display:none;position:absolute;left:0;top:110%;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.15);min-width:180px;z-index:999;overflow:hidden;">
+          <button onclick="exportExcel();document.getElementById('actions-menu').classList.remove('open-menu')" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:var(--text);">⬇️ Excel الرئيسي</button>
+          <button onclick="exportFiltered();document.getElementById('actions-menu').classList.remove('open-menu')" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">⬇️ Excel المفلتر</button>
+          <button onclick="exportSelectedExcel();document.getElementById('actions-menu').classList.remove('open-menu')" id="export-sel-btn" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:none;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">⬇️ Excel المحددين</button>
+          <button onclick="printTableNow();document.getElementById('actions-menu').classList.remove('open-menu')" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">🖨️ طباعة الجدول</button>
+          <button onclick="clearAll();document.getElementById('actions-menu').classList.remove('open-menu')" data-role="admin" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:#C00000;border-top:1px solid var(--border);">🗑️ حذف الكل</button>
+          <div style="padding:8px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;">
+            <label style="font-size:12px;font-weight:700;color:var(--navy);">صفوف:</label>
+            <select id="page-size" onchange="renderTable(true)" style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;flex:1;"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="9999">الكل</option></select>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="adv-search-panel" id="adv-search-panel">
       <div style="font-weight:700;color:var(--navy);margin-bottom:10px;font-size:13px;">🔍 بحث في أكثر من حقل في نفس الوقت</div>
@@ -2579,16 +2602,6 @@ body.dark .pg-waiting > div{background:#1E272E!important;}
       <tbody id="recordsBody"><tr><td colspan="16" class="empty-msg">جارى التحميل...</td></tr></tbody>
     </table></div></div>
     <div class="pagination" id="pagination-wrap" style="border-top:1px solid var(--border);"></div>
-    <div style="padding:10px 20px;border-top:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;align-items:center;" data-role="admin,supervisor">
-      <button class="btn btn-success" onclick="exportExcel()">⬇️ Excel الرئيسي</button>
-      <button class="btn btn-success btn-sm" onclick="exportFiltered()">⬇️ Excel المفلتر</button>
-      <button class="btn btn-primary btn-sm" onclick="exportSelectedExcel()" id="export-sel-btn" style="display:none;">⬇️ Excel المحددين</button>
-      <button class="btn btn-warning btn-sm" onclick="printTableNow()">🖨️ طباعة الجدول</button>
-      <div style="flex:1"></div>
-      <label style="font-size:12px;font-weight:700;color:var(--navy);">صفوف:</label>
-      <select id="page-size" onchange="renderTable(true)" style="border:1.5px solid var(--border);border-radius:8px;padding:5px 8px;font-size:12px;"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="9999">الكل</option></select>
-      <button class="btn btn-danger" onclick="clearAll()" data-role="admin">🗑️ حذف الكل</button>
-    </div>
   </div>
 </div>
 
