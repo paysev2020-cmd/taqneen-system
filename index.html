@@ -1960,26 +1960,27 @@ async function tgBroadcast(text){
 async function tgPollUpdates(){
   if(!can.manage()) return;
   try{
-    var res = await fetch(`https://api.telegram.org/bot${TG_TOKEN}/getUpdates?timeout=0&offset=-1`);
+    var offset = _tgLastUpdateId ? _tgLastUpdateId + 1 : '';
+    var url = 'https://api.telegram.org/bot'+TG_TOKEN+'/getUpdates?limit=10'+(offset?'&offset='+offset:'');
+    var res = await fetch(url);
     var data = await res.json();
     if(!data.ok || !data.result.length) return;
-    var last = data.result[data.result.length-1];
-    var msg  = last.message || last.edited_message;
-    if(!msg) return;
-    var chatId = String(msg.chat.id);
-    var text   = (msg.text||'').trim();
-    var updateId = last.update_id;
-    // تجاهل الرسائل القديمة
-    if(window._lastTgUpdate && updateId <= window._lastTgUpdate) return;
-    window._lastTgUpdate = updateId;
-    // تحقق من الصلاحية
-    if(!TG_ALLOWED[chatId]){
-      await tgSend(chatId, '🚫 غير مصرح لك باستخدام هذا البوت.\nتواصل مع المدير لطلب الوصول.');
-      return;
+    for(var i=0; i<data.result.length; i++){
+      var update = data.result[i];
+      _tgLastUpdateId = update.update_id;
+      var msg = update.message || update.edited_message;
+      if(!msg) continue;
+      var chatId = String(msg.chat.id);
+      var text   = (msg.text||'').trim();
+      if(!text) continue;
+      if(!TG_ALLOWED[chatId]){
+        await tgSend(chatId,'🚫 غير مصرح لك.\nتواصل مع المدير لطلب الوصول.\n\n📧 Chat ID بتاعك: <code>'+chatId+'</code>');
+        continue;
+      }
+      var userRole_ = TG_ALLOWED[chatId].role;
+      await handleTgCommand(chatId, text, userRole_);
     }
-    var userRole_ = TG_ALLOWED[chatId].role;
-    await handleTgCommand(chatId, text, userRole_);
-  }catch(e){}
+  }catch(e){ console.warn('tgPoll:',e); }
 }
 
 // ══ معالجة الأوامر ══
@@ -2085,25 +2086,40 @@ async function handleTgCommand(chatId, text, role){
     return;
   }
 
-  if(cmd === '/search' && arg){
+  if(cmd === '/search'){
+    if(!arg){
+      // بدون argument — عرض آخر 5 سجلات
+      var recent5 = records.slice(0,5);
+      var lines3=['📋 <b>آخر '+recent5.length+' سجلات:</b>\n'];
+      recent5.forEach(function(r,i){
+        var st=r.status==='complete'?'✅':r.status==='tqonly'?'🔢':'⏳';
+        lines3.push((i+1)+'. <b>'+r.name+'</b> '+st);
+        lines3.push('   📞 '+(r.tel1||'—')+' | 🏷️ '+(r.natid||'—'));
+      });
+      lines3.push('\n💡 للبحث: /search [اسم أو رقم قومي]');
+      await tgSend(chatId, lines3.join('\n'));
+      return;
+    }
     var q = arg.toLowerCase();
     var found = records.filter(r=>
       (r.name||'').toLowerCase().includes(q)||
       (r.natid||'').includes(q)||
-      (r.newtq||'').includes(q)
+      (r.newtq||'').includes(q)||
+      (r.address||'').toLowerCase().includes(q)
     );
-    if(!found.length){ await tgSend(chatId,'🔍 لا توجد نتائج لـ: '+arg); return; }
-    var lines3=['🔍 <b>نتائج البحث ('+found.length+')</b>\n'];
+    if(!found.length){ await tgSend(chatId,'🔍 لا توجد نتائج لـ: <b>'+arg+'</b>'); return; }
+    var lines3_=['🔍 <b>نتائج البحث ('+found.length+')</b>\n'];
     found.slice(0,5).forEach(function(r,i){
       var st=r.status==='complete'?'✅':r.status==='tqonly'?'🔢':'⏳';
-      lines3.push((i+1)+'. <b>'+r.name+'</b>');
-      lines3.push('   الرقم القومي: '+r.natid);
-      lines3.push('   الحالة: '+st);
-      lines3.push('   تقنين: '+(r.newtq||'—')+' | رفع: '+(r.anum||'—'));
-      if(i<found.length-1) lines3.push('');
+      lines3_.push((i+1)+'. <b>'+r.name+'</b> '+st);
+      lines3_.push('   🪪 '+(r.natid||'—'));
+      lines3_.push('   📞 '+(r.tel1||'—'));
+      lines3_.push('   🏘️ '+(r.address||'—'));
+      lines3_.push('   🔢 تقنين: '+(r.newtq||'—')+' | رفع: '+(r.anum||'—'));
+      if(i<Math.min(found.length,5)-1) lines3_.push('');
     });
-    if(found.length>5) lines3.push('\n... و '+(found.length-5)+' نتائج أخرى');
-    await tgSend(chatId, lines3.join('\n'));
+    if(found.length>5) lines3_.push('\n... و <b>'+(found.length-5)+'</b> نتائج أخرى — دقق في البحث');
+    await tgSend(chatId, lines3_.join('\n'));
     return;
   }
 
@@ -2145,12 +2161,13 @@ async function handleTgCommand(chatId, text, role){
   await tgSend(chatId, '❓ أمر غير معروف. ابعت /help لقائمة الأوامر.');
 }
 
-// ══ بدء polling كل 15 ثانية ══
+// ══ بدء polling كل 3 ثواني ══
 var _tgPollInterval = null;
+var _tgLastUpdateId = 0;
 function startTgPolling(){
   if(_tgPollInterval) return;
-  tgPollUpdates(); // فوري
-  _tgPollInterval = setInterval(tgPollUpdates, 15000);
+  tgPollUpdates();
+  _tgPollInterval = setInterval(tgPollUpdates, 3000);
 }
 
 // ══ إشعارات تلقائية ══
