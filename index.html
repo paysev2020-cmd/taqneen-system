@@ -1059,6 +1059,30 @@ window.renderTable=function(reset=false){
   if(search)data=data.filter(r=>fmt(r.name).toLowerCase().includes(search)||fmt(r.natid).includes(search)||fmt(r.address).toLowerCase().includes(search)||fmt(r.newtq).includes(search)||fmt(r.anum).includes(search));
   if(statusF)data=data.filter(r=>r.status===statusF);
   if(villageF)data=data.filter(r=>(r.address||'').startsWith(villageF));
+  // Advanced search
+  const asName=(document.getElementById('as-name')?.value||'').trim().toLowerCase();
+  const asNatid=(document.getElementById('as-natid')?.value||'').trim();
+  const asTel=(document.getElementById('as-tel')?.value||'').trim();
+  const asNewtq=(document.getElementById('as-newtq')?.value||'').trim();
+  const asAnum=(document.getElementById('as-anum')?.value||'').trim();
+  const asAddr=(document.getElementById('as-addr')?.value||'').trim().toLowerCase();
+  const asFrom=(document.getElementById('as-from')?.value||'').trim();
+  const asTo=(document.getElementById('as-to')?.value||'').trim();
+  const asBy=(document.getElementById('as-by')?.value||'').trim().toLowerCase();
+  if(asName||asNatid||asTel||asNewtq||asAnum||asAddr||asFrom||asTo||asBy){
+    data=data.filter(r=>{
+      if(asName&&!(r.name||'').toLowerCase().includes(asName))return false;
+      if(asNatid&&!(r.natid||'').includes(asNatid))return false;
+      if(asTel&&![(r.tel1||''),(r.tel2||''),(r.tel3||'')].some(t=>t.includes(asTel)))return false;
+      if(asNewtq&&!(r.newtq||'').includes(asNewtq))return false;
+      if(asAnum&&!(r.anum||'').includes(asAnum))return false;
+      if(asAddr&&!(r.address||'').toLowerCase().includes(asAddr))return false;
+      if(asFrom&&r.adddate&&r.adddate<asFrom)return false;
+      if(asTo&&r.adddate&&r.adddate>asTo)return false;
+      if(asBy&&![(r.createdBy||''),(r.createdName||'')].some(x=>x.toLowerCase().includes(asBy)))return false;
+      return true;
+    });
+  }
   if(sortF==='newest')data.sort((a,b)=>(b.adddate||'').localeCompare(a.adddate||''));
   if(sortF==='oldest')data.sort((a,b)=>(a.adddate||'').localeCompare(b.adddate||''));
   if(sortF==='name')data.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ar'));
@@ -1090,7 +1114,7 @@ window.renderTable=function(reset=false){
       <td>${sbadge(r.status)}</td>
       <td style="font-size:10px;color:var(--muted);">${r.createdName||r.createdBy||''}</td>
       <td onclick="event.stopPropagation()">${(userRole!=='viewer')?`<button class="print-btn" onclick="printCard('${r._docId}')" title="طباعة">🖨️</button>`:'—'}</td>
-      <td onclick="event.stopPropagation()">${canEd?`<button class="edit-btn" onclick="openEdit('${r._docId}')">✏️</button>`:'—'}</td>
+      <td onclick="event.stopPropagation()">${canEd?`<button class="edit-btn" onclick="openEdit('${r._docId}')">✏️ <span id="cb-${r._docId}" style="background:#e53935;color:#fff;border-radius:10px;padding:1px 5px;font-size:10px;display:none;"></span></button>`:'—'}</td>
       <td onclick="event.stopPropagation()">${canDel?`<button class="del-btn" onclick="delRec('${r._docId}')">🗑</button>`:'—'}</td>
     </tr>`;
   }).join('');
@@ -1878,6 +1902,59 @@ window.exportBackupJson=function(){
   logAudit('export','نسخة احتياطية JSON');showToast('✅ تم تحميل النسخة الاحتياطية');
 };
 
+// ══ DARK MODE ══
+window.toggleDarkMode=function(){
+  var isDark=document.body.classList.toggle('dark');
+  document.getElementById('dark-toggle').textContent=isDark?'☀️':'🌙';
+  localStorage.setItem('darkMode',isDark?'1':'0');
+};
+(function(){
+  if(localStorage.getItem('darkMode')==='1'){
+    document.body.classList.add('dark');
+    var btn=document.getElementById('dark-toggle');
+    if(btn)btn.textContent='☀️';
+  }
+})();
+
+// ══ PRINT TABLE ══
+window.printTableNow=function(){
+  var table=document.getElementById('recordsTable');
+  if(!table){showToast('❌ لا يوجد جدول');return;}
+  var win=window.open('','_blank','width=900,height=700');
+  win.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">'
+    +'<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">'
+    +'<style>*{box-sizing:border-box;}body{font-family:Cairo,sans-serif;padding:15mm;}'
+    +'h2{color:#1F4E79;margin-bottom:10px;font-size:16px;}p{font-size:11px;color:#666;margin-bottom:10px;}'
+    +'table{width:100%;border-collapse:collapse;font-size:10px;}'
+    +'th{background:#1F4E79;color:#fff;padding:6px 4px;text-align:right;}'
+    +'td{padding:5px 4px;border-bottom:1px solid #ddd;}'
+    +'tr:nth-child(even){background:#f5f8fb;}'
+    +'.no-print{display:none!important;}'
+    +'@media print{@page{size:A4 landscape;margin:10mm;}}'
+    +'</style></head><body>'
+    +'<h2>📋 سجلات نظام التقنين</h2>'
+    +'<p>تاريخ الطباعة: '+new Date().toLocaleDateString('ar-EG')
+    +' — إجمالي: '+document.getElementById('countBadge').textContent+'</p>'
+    +table.outerHTML.replace(/<th[^>]*>طباعة<\/th>/g,'').replace(/<th[^>]*>تعديل<\/th>/g,'').replace(/<th[^>]*>حذف<\/th>/g,'')
+    +'</body></html>');
+  win.document.close();
+  setTimeout(function(){win.print();},500);
+};
+
+// ══ COMMENT BADGE ══
+var commentCounts={};
+window.loadCommentCount=async function(docId){
+  try{
+    var snap=await getDocs(collection(db,'records',docId,'comments'));
+    commentCounts[docId]=snap.size;
+    var badge=document.getElementById('cb-'+docId);
+    if(badge){
+      if(snap.size>0){badge.textContent=snap.size;badge.style.display='inline';}
+      else{badge.style.display='none';}
+    }
+  }catch(e){}
+};
+
 // ══ ADVANCED SEARCH ══
 window.clearAdvSearch=function(){
   ['as-name','as-natid','as-tel','as-newtq','as-anum','as-addr','as-from','as-to','as-by']
@@ -2214,7 +2291,41 @@ tbody td{padding:7px;text-align:center;border:1px solid var(--border);white-spac
   .toast{font-size:12px;padding:10px 16px;max-width:90vw;text-align:center;}
 }
 
-/* ══ ADVANCED SEARCH ══ */
+/* ══ DARK MODE ══ */
+body.dark{
+  --navy:#90CAF9;--blue:#64B5F6;--sky:#1E2A3A;--green:#81C784;--mint:#1B3A2D;
+  --gold:#FFD54F;--orange:#FFB74D;--red:#EF9A9A;--muted:#90A4AE;
+  --text:#E0E0E0;--border:#37474F;--white:#1E272E;--shadow:0 4px 20px rgba(0,0,0,.5);
+  background:linear-gradient(135deg,#0D1B2A 0%,#1B2A1D 100%)!important;
+  color:#E0E0E0;
+}
+body.dark .app-header{background:linear-gradient(120deg,#0D1B2A,#1B2A3A)!important;}
+body.dark .card{background:#1E272E!important;border:1px solid #37474F;}
+body.dark .card-header{background:#0D1B2A!important;}
+body.dark .modal{background:#1E272E!important;}
+body.dark .modal-header{background:#0D1B2A!important;}
+body.dark input,body.dark select,body.dark textarea{background:#263238!important;color:#E0E0E0!important;border-color:#37474F!important;}
+body.dark .table-wrap table{background:#1E272E;}
+body.dark thead{background:#0D1B2A!important;}
+body.dark tbody tr:hover{background:#263238!important;}
+body.dark tbody tr:nth-child(even){background:#1A2530!important;}
+body.dark .btn-outline{background:transparent!important;color:#90CAF9!important;border-color:#90CAF9!important;}
+body.dark .stat-card{background:#1E272E!important;border:1px solid #37474F;}
+body.dark .adv-search-panel{background:#1E2A3A!important;}
+body.dark .comment-bubble{background:#1E2A3A!important;}
+body.dark #login-screen{background:linear-gradient(135deg,#0D1B2A,#1B2A3A)!important;}
+body.dark #login-screen > div{background:#1E272E!important;color:#E0E0E0!important;}
+body.dark .filter-bar{background:#1E272E;}
+body.dark .pg-waiting > div{background:#1E272E!important;}
+
+#dark-toggle{
+  position:fixed;bottom:20px;right:20px;z-index:999;
+  width:42px;height:42px;border-radius:50%;border:none;cursor:pointer;
+  font-size:20px;display:flex;align-items:center;justify-content:center;
+  background:var(--navy);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.3);
+  transition:all .3s;
+}
+#dark-toggle:hover{transform:scale(1.1);}
 .adv-search-panel{background:var(--sky);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;display:none;}
 .adv-search-panel.open{display:block;}
 .adv-search-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
@@ -2407,6 +2518,7 @@ tbody td{padding:7px;text-align:center;border:1px solid var(--border);white-spac
       <button class="btn btn-success" onclick="exportExcel()">⬇️ Excel الرئيسي</button>
       <button class="btn btn-success btn-sm" onclick="exportFiltered()">⬇️ Excel المفلتر</button>
       <button class="btn btn-primary btn-sm" onclick="exportSelectedExcel()" id="export-sel-btn" style="display:none;">⬇️ Excel المحددين</button>
+      <button class="btn btn-warning btn-sm" onclick="printTableNow()">🖨️ طباعة الجدول</button>
       <div style="flex:1"></div>
       <label style="font-size:12px;font-weight:700;color:var(--navy);">صفوف:</label>
       <select id="page-size" onchange="renderTable(true)" style="border:1.5px solid var(--border);border-radius:8px;padding:5px 8px;font-size:12px;"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="9999">الكل</option></select>
@@ -2531,6 +2643,7 @@ tbody td{padding:7px;text-align:center;border:1px solid var(--border);white-spac
 <div class="undo-toast" id="undo-toast"><span id="undo-msg">تم الحذف</span><button class="undo-btn" onclick="undoDelete()">↩️ تراجع</button></div>
 <div class="toast" id="toast"></div>
 <button id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="للأعلى">↑</button>
+<button id="dark-toggle" onclick="toggleDarkMode()" title="الوضع الليلي">🌙</button>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
