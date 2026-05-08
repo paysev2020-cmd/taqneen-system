@@ -401,8 +401,7 @@ window.openEdit = function(docId) {
   s('e_adate',r.adate);s('e_deadline',r.deadline);s('e_notes',r.notes);
   s('e_status',r.status);
   document.getElementById('editModal').classList.add('show');
-  // تحميل التعليقات
-  if(typeof loadComments === 'function') loadComments(docId);
+  if(typeof window.loadComments==='function')window.loadComments(docId);
 };
 
 window.saveEdit = async function() {
@@ -682,7 +681,7 @@ window.printMultiple=function(){
     <meta charset="UTF-8"><title>بطاقات التقنين</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <style>body{font-family:Cairo,sans-serif;padding:20px;background:#fff;}@media print{@page{size:A4;margin:15mm;}}</style>
-    </head><body>${cards}<scr'+'ipt>window.onload=()=>window.print();<'+'/script></body></html>\`);
+    </head><body>${cards}<script>window.onload=()=>window.print();<\/script></body></html>`);
   win.document.close();
   printSelection.clear();updatePrintSelUI();renderTable();
 };
@@ -1060,8 +1059,6 @@ window.renderTable=function(reset=false){
   if(search)data=data.filter(r=>fmt(r.name).toLowerCase().includes(search)||fmt(r.natid).includes(search)||fmt(r.address).toLowerCase().includes(search)||fmt(r.newtq).includes(search)||fmt(r.anum).includes(search));
   if(statusF)data=data.filter(r=>r.status===statusF);
   if(villageF)data=data.filter(r=>(r.address||'').startsWith(villageF));
-  // تطبيق البحث المتقدم
-  if(typeof applyAdvSearch === 'function') data = applyAdvSearch(data);
   if(sortF==='newest')data.sort((a,b)=>(b.adddate||'').localeCompare(a.adddate||''));
   if(sortF==='oldest')data.sort((a,b)=>(a.adddate||'').localeCompare(b.adddate||''));
   if(sortF==='name')data.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ar'));
@@ -1314,44 +1311,24 @@ window.generateReport=function(){
   const cutoff=new Date();cutoff.setDate(today.getDate()-7);
   const late=records.filter(r=>r.adddate&&new Date(r.adddate)<cutoff&&r.status!=='complete');
   const aStats=calcAreaStats(records);
-
+  const rrow=(l,v,cls='')=>`<div class="report-row"><span>${l}</span><strong class="${cls}">${v}</strong></div>`;
   document.getElementById('report-preview').innerHTML=`
-    <div class="pdf-section">
-      <div class="pdf-section-title">📅 ${dateStr}</div>
-      <div class="pdf-stat-grid">
-        <div class="pdf-stat-box"><div class="num">${total}</div><div class="lbl">إجمالي الطلبات</div></div>
-        <div class="pdf-stat-box" style="background:#E2EFDA;"><div class="num" style="color:#375623;">${complete}</div><div class="lbl">✅ مكتمل</div></div>
-        <div class="pdf-stat-box" style="background:#FFF3CD;"><div class="num" style="color:#856404;">${tqonly}</div><div class="lbl">🔢 تقنين فقط</div></div>
-        <div class="pdf-stat-box" style="background:#FDE8E8;"><div class="num" style="color:#C00000;">${pending}</div><div class="lbl">⏳ ناقص</div></div>
-        <div class="pdf-stat-box"><div class="num">${withA}</div><div class="lbl">لديه رفع مساحى</div></div>
-        <div class="pdf-stat-box" style="background:#E2EFDA;"><div class="num" style="color:#375623;">${thisWeek.length}</div><div class="lbl">مضاف هذا الأسبوع</div></div>
-      </div>
-      ${aStats.counted?`<div style="margin-top:10px;font-size:12px;color:var(--navy);"><b>إجمالى المساحات:</b> ${aStats.totalM2.toLocaleString('ar-EG')} م² ≈ ${aStats.feddan} فدان</div>`:''}
+    <div class="report-section">
+      <div class="report-title">📊 التقرير الأسبوعى — ${dateStr}</div>
+      ${rrow('إجمالي الطلبات',total)}${rrow('مكتمل',complete+' طلب')}
+      ${rrow('تقنين فقط',tqonly+' طلب')}${rrow('ناقص بيانات',pending+' طلب')}
+      ${rrow('لديه رفع مساحى',withA+' طلب')}
+      ${aStats.counted?rrow('إجمالى المساحات',aStats.totalM2.toLocaleString('ar-EG')+' م² ≈ '+aStats.feddan+' فدان'):''}
+      ${rrow('نسبة الإنجاز',pct+'%')}
     </div>
-    <div class="pdf-section">
-      <div class="pdf-section-title">📊 نسبة الإنجاز</div>
-      <div class="progress-wrap" style="height:22px;">
-        <div class="progress-bar" style="width:${Math.max(pct,3)}%;">${pct}%</div>
-      </div>
-      <div style="font-size:12px;color:var(--muted);margin-top:6px;">المكتمل ${complete} من أصل ${total} طلب</div>
+    <div class="report-section">
+      <div class="report-title">📅 نشاط هذا الأسبوع</div>
+      ${rrow('مضاف خلال 7 أيام',thisWeek.length+' طلب')}
+      ${rrow('متأخرون (+7 أيام)',late.length+' طلب',late.length?'deadline-late':'')}
     </div>
-    ${late.length?`<div class="pdf-section">
-      <div class="pdf-section-title">⚠️ المتأخرون — ${late.length} طلب</div>
-      <div style="overflow-x:auto;"><table style="width:100%;font-size:11px;border-collapse:collapse;">
-        <thead><tr style="background:var(--orange);color:#fff;">
-          <th style="padding:6px;">م</th><th>الاسم</th><th>الرقم القومي</th><th>تاريخ الإضافة</th><th>أيام</th>
-        </tr></thead><tbody>
-        ${late.slice(0,15).map((r,i)=>`<tr style="${i%2?'background:var(--sky)':''}">
-          <td style="padding:5px;text-align:center;">${i+1}</td>
-          <td style="padding:5px;">${r.name||'—'}</td>
-          <td style="padding:5px;direction:ltr;">${r.natid||'—'}</td>
-          <td style="padding:5px;">${r.adddate||'—'}</td>
-          <td style="padding:5px;text-align:center;color:var(--red);font-weight:700;">${Math.floor((today-new Date(r.adddate))/86400000)}</td>
-        </tr>`).join('')}
-        </tbody>
-      </table></div>
-    </div>`:`<div class="pdf-section"><div style="color:var(--green);font-weight:700;font-size:13px;">✅ لا يوجد متأخرون</div></div>`}
-  `;
+    ${late.length?`<div class="report-section"><div class="report-title">⚠️ أبرز المتأخرين</div>
+      ${late.slice(0,10).map(r=>rrow(r.name,Math.floor((today-new Date(r.adddate))/86400000)+' يوم','deadline-late')).join('')}
+    </div>`:''}`;
 };
 window.exportReportWord=function(){
   if(!can.export())return;
@@ -1764,7 +1741,7 @@ window.changeTeamRole = async function(docId, newRole) {
 // ══════════════════════════════════════════════
 // MODAL + MISC
 // ══════════════════════════════════════════════
-window.closeModal=function(id){document.getElementById(id)?.classList.remove('show');editDocId=null;currentCommentDocId=null;};
+window.closeModal=function(id){document.getElementById(id)?.classList.remove('show');editDocId=null;};
 window.showToast=function(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);};
 window.clearFilters=function(){
   document.getElementById('f-search').value='';document.getElementById('f-status').value='';
@@ -1851,7 +1828,7 @@ window.printCardWindow=function(){
     }
   </style></head><body>
   <div class="print-first-page">${content}</div>
-  <scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},500);}<'+'/script></body></html>\`);
+  <script>window.onload=function(){setTimeout(function(){window.print();},500);}<\/script></body></html>`);
   win.document.close();
 };
 
@@ -1901,141 +1878,103 @@ window.exportBackupJson=function(){
   logAudit('export','نسخة احتياطية JSON');showToast('✅ تم تحميل النسخة الاحتياطية');
 };
 
-// ══════════════════════════════════════════════
-// ADVANCED SEARCH
-// ══════════════════════════════════════════════
-window.toggleAdvSearch = function() {
-  const panel = document.getElementById('adv-search-panel');
-  panel.classList.toggle('open');
-};
-window.clearAdvSearch = function() {
-  ['as-name','as-natid','as-tel','as-newtq','as-anum','as-address','as-date-from','as-date-to','as-added-by']
-    .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+// ══ ADVANCED SEARCH ══
+window.clearAdvSearch=function(){
+  ['as-name','as-natid','as-tel','as-newtq','as-anum','as-addr','as-from','as-to','as-by']
+    .forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   renderTable(true);
 };
-function applyAdvSearch(data) {
-  const g = id => (document.getElementById(id)?.value||'').trim().toLowerCase();
-  const name=g('as-name'),natid=g('as-natid'),tel=g('as-tel'),newtq=g('as-newtq');
-  const anum=g('as-anum'),address=g('as-address'),dateFrom=g('as-date-from'),dateTo=g('as-date-to'),addedBy=g('as-added-by');
-  if(!name&&!natid&&!tel&&!newtq&&!anum&&!address&&!dateFrom&&!dateTo&&!addedBy) return data;
-  return data.filter(r => {
-    if(name    && !(r.name||'').toLowerCase().includes(name)) return false;
-    if(natid   && !(r.natid||'').toLowerCase().includes(natid)) return false;
-    if(tel     && ![(r.tel1||''),(r.tel2||''),(r.tel3||'')].some(t=>t.includes(tel))) return false;
-    if(newtq   && !(r.newtq||'').toLowerCase().includes(newtq)) return false;
-    if(anum    && !(r.anum||'').toLowerCase().includes(anum)) return false;
-    if(address && !(r.address||'').toLowerCase().includes(address)) return false;
-    if(dateFrom && r.adddate && r.adddate < dateFrom) return false;
-    if(dateTo   && r.adddate && r.adddate > dateTo) return false;
-    if(addedBy && ![(r.createdBy||''),(r.createdName||'')].some(x=>x.toLowerCase().includes(addedBy))) return false;
-    return true;
-  });
-}
 
-// ══════════════════════════════════════════════
-// COMMENTS SYSTEM
-// ══════════════════════════════════════════════
-let currentCommentDocId = null;
-window.loadComments = async function(docId) {
-  currentCommentDocId = docId;
-  const list = document.getElementById('comments-list');
-  if(!list) return;
-  list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:8px;">جارى التحميل...</div>';
-  try {
-    const snap = await getDocs(query(collection(db,'records',docId,'comments'), orderBy('timestamp','asc')));
-    if(snap.empty) { list.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:12px;">لا توجد تعليقات بعد</div>'; return; }
-    list.innerHTML = snap.docs.map(d => {
-      const c = d.data();
-      const initials = (c.userName||'?').slice(0,2);
-      return `<div class="comment-item">
-        <div class="comment-avatar">${initials}</div>
-        <div class="comment-bubble">
-          <div class="c-user">${c.userName||c.userEmail||'مجهول'}</div>
-          <div class="c-text">${c.text}</div>
-          <div class="c-time">${c.time||''}</div>
-        </div>
-      </div>`;
+// ══ COMMENTS ══
+var currentCommentDocId=null;
+window.loadComments=async function(docId){
+  currentCommentDocId=docId;
+  var list=document.getElementById('comments-list');
+  if(!list)return;
+  list.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:8px;">جارى التحميل...</div>';
+  try{
+    var snap=await getDocs(query(collection(db,'records',docId,'comments'),orderBy('timestamp','asc')));
+    if(snap.empty){list.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:10px;">لا توجد تعليقات</div>';return;}
+    list.innerHTML=snap.docs.map(function(d){
+      var c=d.data();
+      var init=(c.userName||'?').slice(0,2);
+      return '<div class="comment-item"><div class="comment-avatar">'+init+'</div><div class="comment-bubble"><div class="c-user">'+(c.userName||c.userEmail||'مجهول')+'</div><div class="c-text">'+c.text+'</div><div class="c-time">'+(c.time||'')+'</div></div></div>';
     }).join('');
-    list.scrollTop = list.scrollHeight;
-  } catch(e) { list.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:8px;">تعذر التحميل</div>'; }
+    list.scrollTop=list.scrollHeight;
+  }catch(e){list.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:8px;">تعذر التحميل</div>';}
 };
-window.addComment = async function() {
-  if(!currentCommentDocId) return;
-  const input = document.getElementById('comment-input');
-  const text = input?.value.trim();
-  if(!text) { showToast('⚠️ اكتب تعليقاً أولاً'); return; }
-  try {
-    await addDoc(collection(db,'records',currentCommentDocId,'comments'), {
-      text, userEmail: currentUser?.email||'', userName: currentUser?.displayName||currentUser?.email||'مجهول',
-      time: NOW(), timestamp: serverTimestamp(),
+window.addComment=async function(){
+  if(!currentCommentDocId)return;
+  var input=document.getElementById('comment-input');
+  var text=input?input.value.trim():'';
+  if(!text){showToast('⚠️ اكتب تعليقاً أولاً');return;}
+  try{
+    await addDoc(collection(db,'records',currentCommentDocId,'comments'),{
+      text:text,userEmail:currentUser?currentUser.email:'',
+      userName:currentUser?(currentUser.displayName||currentUser.email||'مجهول'):'مجهول',
+      time:NOW(),timestamp:serverTimestamp()
     });
-    input.value = '';
-    await loadComments(currentCommentDocId);
+    if(input)input.value='';
+    await window.loadComments(currentCommentDocId);
     showToast('✅ تم إضافة التعليق');
-  } catch(e) { showToast('❌ خطأ: ' + e.message); }
+  }catch(e){showToast('❌ خطأ: '+e.message);}
 };
 
-// ══════════════════════════════════════════════
-// PDF REPORT
-// ══════════════════════════════════════════════
-window.exportReportPDF = function() {
-  const total=records.length, complete=records.filter(r=>r.status==='complete').length;
-  const tqonly=records.filter(r=>r.status==='tqonly').length, pending=records.filter(r=>r.status==='pending').length;
-  const withA=records.filter(r=>r.anum).length, pct=total?Math.round(complete/total*100):0;
-  const today=new Date(), dateStr=today.toLocaleDateString('ar-EG',{year:'numeric',month:'long',day:'numeric'});
-  const weekAgo=new Date(); weekAgo.setDate(today.getDate()-7);
-  const thisWeek=records.filter(r=>r.adddate&&new Date(r.adddate)>=weekAgo);
-  const late=records.filter(r=>r.adddate&&new Date(r.adddate)<new Date(today.getTime()-7*86400000)&&r.status!=='complete');
-  const win=window.open('','_blank','width=800,height=900');
-  win.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:Cairo,sans-serif;background:#f5f5f5;color:#1a2a3a;}
-    .page{width:210mm;min-height:297mm;margin:0 auto;background:#fff;padding:16mm;box-shadow:0 0 20px rgba(0,0,0,.1);}
-    .header{background:linear-gradient(135deg,#1F4E79,#2E75B6);color:#fff;padding:20px 24px;border-radius:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;}
-    .header h1{font-size:20px;font-weight:900;}.header .sub{font-size:12px;opacity:.8;margin-top:4px;}
-    .section{margin-bottom:20px;}.section-title{font-size:14px;font-weight:900;color:#1F4E79;border-bottom:2px solid #DEEAF1;padding-bottom:6px;margin-bottom:12px;}
-    .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-    .stat-box{border-radius:8px;padding:12px;text-align:center;}
-    .stat-box .n{font-size:26px;font-weight:900;}.stat-box .l{font-size:11px;color:#6B7C8D;margin-top:2px;}
-    .blue{background:#DEEAF1;}.blue .n{color:#1F4E79;}
-    .green{background:#E2EFDA;}.green .n{color:#375623;}
-    .gold{background:#FFF3CD;}.gold .n{color:#856404;}
-    .red{background:#FDE8E8;}.red .n{color:#C00000;}
-    .progress-wrap{background:#e0e0e0;border-radius:20px;height:20px;overflow:hidden;margin:10px 0;}
-    .progress-bar{height:100%;background:linear-gradient(90deg,#375623,#4CAF50);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;border-radius:20px;}
-    table{width:100%;border-collapse:collapse;font-size:11px;}
-    th{background:#1F4E79;color:#fff;padding:7px;text-align:right;font-weight:700;}
-    td{padding:6px 7px;border-bottom:1px solid #e0e0e0;}tr:nth-child(even){background:#f5f8fb;}
-    .footer{text-align:center;font-size:10px;color:#999;margin-top:24px;padding-top:12px;border-top:1px solid #eee;}
-    @media print{body{background:#fff;}.page{box-shadow:none;margin:0;padding:12mm;}@page{size:A4 portrait;margin:10mm;}}
-  </style></head><body><div class="page">
-    <div class="header">
-      <div><h1>📋 نظام إدارة طلبات التقنين</h1><div class="sub">تقرير شامل — ${dateStr}</div></div>
-      <div style="text-align:left;font-size:13px;"><b>${total}</b> طلب إجمالي<br>نسبة الإنجاز: <b>${pct}%</b></div>
-    </div>
-    <div class="section">
-      <div class="section-title">📊 الإحصائيات العامة</div>
-      <div class="stats-grid">
-        <div class="stat-box blue"><div class="n">${total}</div><div class="l">إجمالي الطلبات</div></div>
-        <div class="stat-box green"><div class="n">${complete}</div><div class="l">✅ مكتمل</div></div>
-        <div class="stat-box gold"><div class="n">${tqonly}</div><div class="l">🔢 تقنين فقط</div></div>
-        <div class="stat-box red"><div class="n">${pending}</div><div class="l">⏳ ناقص بيانات</div></div>
-        <div class="stat-box blue"><div class="n">${withA}</div><div class="l">لديه رفع مساحى</div></div>
-        <div class="stat-box green"><div class="n">${thisWeek.length}</div><div class="l">مضاف هذا الأسبوع</div></div>
-      </div>
-      <div style="margin-top:12px;font-size:12px;font-weight:700;color:#1F4E79;">نسبة الإنجاز:</div>
-      <div class="progress-wrap"><div class="progress-bar" style="width:${Math.max(pct,5)}%">${pct}%</div></div>
-    </div>
-    ${late.length?`<div class="section">
-      <div class="section-title">⚠️ المتأخرون — ${late.length} طلب</div>
-      <table><thead><tr><th>م</th><th>الاسم</th><th>الرقم القومي</th><th>التليفون</th><th>تاريخ الإضافة</th><th>أيام</th></tr></thead>
-      <tbody>${late.slice(0,25).map((r,i)=>`<tr><td>${i+1}</td><td>${r.name||'—'}</td><td>${r.natid||'—'}</td><td>${r.tel1||'—'}</td><td>${r.adddate||'—'}</td><td style="color:#C00000;font-weight:700;">${Math.floor((today-new Date(r.adddate))/86400000)}</td></tr>`).join('')}
-      </tbody></table></div>` : `<div class="section"><div class="section-title">✅ لا يوجد متأخرون</div></div>`}
-    <div class="footer">نظام إدارة طلبات التقنين — تم الإنشاء: ${dateStr} — صادر بواسطة: ${currentUser?.displayName||currentUser?.email||'المدير'}</div>
-  </div><scr'+'ipt>window.onload=function(){window.print();}<'+'/script></body></html>\`);
+// ══ PDF REPORT ══
+window.exportReportPDF=function(){
+  var total=records.length;
+  var complete=records.filter(function(r){return r.status==='complete';}).length;
+  var tqonly=records.filter(function(r){return r.status==='tqonly';}).length;
+  var pending=records.filter(function(r){return r.status==='pending';}).length;
+  var pct=total?Math.round(complete/total*100):0;
+  var today=new Date();
+  var dateStr=today.toLocaleDateString('ar-EG',{year:'numeric',month:'long',day:'numeric'});
+  var weekAgo=new Date();weekAgo.setDate(today.getDate()-7);
+  var thisWeek=records.filter(function(r){return r.adddate&&new Date(r.adddate)>=weekAgo;});
+  var late=records.filter(function(r){return r.adddate&&new Date(r.adddate)<new Date(today.getTime()-7*86400000)&&r.status!=='complete';});
+  var win=window.open('','_blank','width=800,height=900');
+  var lateRows=late.slice(0,20).map(function(r,i){
+    return '<tr><td>'+(i+1)+'</td><td>'+(r.name||'—')+'</td><td>'+(r.natid||'—')+'</td><td>'+(r.adddate||'—')+'</td><td style="color:#C00000;font-weight:700;">'+Math.floor((today-new Date(r.adddate))/86400000)+'</td></tr>';
+  }).join('');
+  var lateSection=late.length
+    ?('<div class="section"><div class="stitle">⚠️ المتأخرون ('+late.length+')</div><table><thead><tr><th>م</th><th>الاسم</th><th>الرقم القومي</th><th>تاريخ الإضافة</th><th>أيام</th></tr></thead><tbody>'+lateRows+'</tbody></table></div>')
+    :'<div class="section"><div style="color:green;font-weight:700;">✅ لا يوجد متأخرون</div></div>';
+  win.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">'
+    +'<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Cairo,sans-serif;background:#f5f5f5;}'
+    +'.page{width:210mm;min-height:297mm;margin:0 auto;background:#fff;padding:16mm;}'
+    +'.header{background:linear-gradient(135deg,#1F4E79,#2E75B6);color:#fff;padding:20px 24px;border-radius:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;}'
+    +'.header h1{font-size:18px;font-weight:900;}.header .sub{font-size:12px;opacity:.8;margin-top:4px;}'
+    +'.section{margin-bottom:20px;}.stitle{font-size:14px;font-weight:900;color:#1F4E79;border-bottom:2px solid #DEEAF1;padding-bottom:6px;margin-bottom:12px;}'
+    +'.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}'
+    +'.sb{border-radius:8px;padding:12px;text-align:center;}.sb .n{font-size:24px;font-weight:900;}.sb .l{font-size:11px;margin-top:2px;}'
+    +'.blue{background:#DEEAF1;}.blue .n{color:#1F4E79;}.green{background:#E2EFDA;}.green .n{color:#375623;}'
+    +'.gold{background:#FFF3CD;}.gold .n{color:#856404;}.red{background:#FDE8E8;}.red .n{color:#C00000;}'
+    +'.pw{background:#e0e0e0;border-radius:20px;height:20px;overflow:hidden;margin:10px 0;}'
+    +'.pb{height:100%;background:linear-gradient(90deg,#375623,#4CAF50);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;border-radius:20px;}'
+    +'table{width:100%;border-collapse:collapse;font-size:11px;}th{background:#1F4E79;color:#fff;padding:7px;text-align:right;}td{padding:6px;border-bottom:1px solid #e0e0e0;}tr:nth-child(even){background:#f5f8fb;}'
+    +'.footer{text-align:center;font-size:10px;color:#999;margin-top:20px;padding-top:10px;border-top:1px solid #eee;}'
+    +'@media print{body{background:#fff;}.page{box-shadow:none;margin:0;padding:12mm;}@page{size:A4 portrait;margin:10mm;}}'
+    +'</style></head><body><div class="page">'
+    +'<div class="header"><div><h1>📋 نظام إدارة طلبات التقنين</h1><div class="sub">تقرير شامل — '+dateStr+'</div></div>'
+    +'<div style="text-align:left;font-size:13px;"><b>'+total+'</b> طلب — <b>'+pct+'%</b> إنجاز</div></div>'
+    +'<div class="section"><div class="stitle">📊 الإحصائيات</div>'
+    +'<div class="sg">'
+    +'<div class="sb blue"><div class="n">'+total+'</div><div class="l">إجمالي الطلبات</div></div>'
+    +'<div class="sb green"><div class="n">'+complete+'</div><div class="l">✅ مكتمل</div></div>'
+    +'<div class="sb gold"><div class="n">'+tqonly+'</div><div class="l">🔢 تقنين فقط</div></div>'
+    +'<div class="sb red"><div class="n">'+pending+'</div><div class="l">⏳ ناقص</div></div>'
+    +'<div class="sb blue"><div class="n">'+thisWeek.length+'</div><div class="l">مضاف هذا الأسبوع</div></div>'
+    +'<div class="sb green"><div class="n">'+late.length+'</div><div class="l">⚠️ متأخرون</div></div>'
+    +'</div>'
+    +'<div style="margin-top:10px;font-size:12px;font-weight:700;color:#1F4E79;">نسبة الإنجاز:</div>'
+    +'<div class="pw"><div class="pb" style="width:'+Math.max(pct,3)+'%">'+pct+'%</div></div>'
+    +'</div>'
+    +lateSection
+    +'<div class="footer">نظام إدارة طلبات التقنين — '+dateStr+'</div>'
+    +'</div></body></html>');
   win.document.close();
+  setTimeout(function(){win.print();},500);
   logAudit('export','تقرير PDF');
 };
 
@@ -2251,36 +2190,35 @@ tbody td{padding:7px;text-align:center;border:1px solid var(--border);white-spac
 @media(max-width:700px){.stats-grid{grid-template-columns:1fr 1fr;}.g2,.g3{grid-template-columns:1fr;}.span2{grid-column:span 1;}}
 @media(max-width:460px){.stats-grid{grid-template-columns:1fr;}}
 
-/* ══ MOBILE RESPONSIVE ══ */
+/* ══ MOBILE ══ */
 @media(max-width:600px){
-  .app-header{padding:0 10px;}
-  .app-header-top{flex-wrap:wrap;gap:8px;padding:10px 0 0;}
-  .app-title{font-size:14px;}
-  .header-badges{display:none;}
+  .app-header{padding:0 8px;}
+  .app-header-top{flex-wrap:wrap;gap:6px;padding:8px 0 0;}
+  .app-title{font-size:13px;}
+  .header-badges,.nav-tab span.badge-text{display:none;}
   #user-name,#user-email{display:none;}
-  .nav-tab{padding:8px 10px;font-size:10px;}
+  .nav-tab{padding:7px 8px;font-size:10px;}
   .page{padding:10px 8px 80px;}
-  .card-body{padding:12px;}
-  .btn{padding:8px 14px;font-size:12px;}
-  .modal{max-width:100%;margin:8px;border-radius:12px;}
-  .modal-body{padding:14px;}
+  .card-body{padding:12px 10px;}
+  .btn{padding:7px 12px;font-size:12px;}
+  .modal-body{padding:12px;}
   .filter-bar{flex-direction:column;align-items:stretch;gap:6px;}
-  .filter-bar input,.filter-bar select{width:100%;}
-  .records-wrap{font-size:10px;}
-  thead th{padding:6px 4px;font-size:10px;}
-  tbody td{padding:5px 3px;font-size:10px;}
-  .btn-bar{flex-direction:column;}
-  .btn-bar .btn{width:100%;justify-content:center;}
+  .filter-bar input,.filter-bar select{width:100%!important;}
+  .records-wrap{overflow-x:auto;}
   .grid.g2,.grid.g3{grid-template-columns:1fr;}
   .span2,.span3{grid-column:span 1;}
   .stats-grid{grid-template-columns:1fr 1fr;gap:8px;}
-  .stat-num{font-size:22px;}
-  .print-bar{flex-wrap:wrap;gap:6px;}
+  .stat-num{font-size:20px;}
+  .btn-bar{flex-wrap:wrap;gap:6px;}
   #scrollTop{bottom:70px;left:12px;width:36px;height:36px;font-size:16px;}
-  .toast{font-size:12px;padding:10px 18px;white-space:normal;text-align:center;max-width:90vw;}
-  .pagination{flex-wrap:wrap;gap:4px;}
-  .hbadge{padding:3px 8px;font-size:10px;}
+  .toast{font-size:12px;padding:10px 16px;max-width:90vw;text-align:center;}
 }
+
+/* ══ ADVANCED SEARCH ══ */
+.adv-search-panel{background:var(--sky);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;display:none;}
+.adv-search-panel.open{display:block;}
+.adv-search-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+@media(max-width:600px){.adv-search-grid{grid-template-columns:1fr;}}
 
 /* ══ COMMENTS ══ */
 .comments-wrap{border-top:1px solid var(--border);margin-top:14px;padding-top:12px;}
@@ -2296,22 +2234,11 @@ tbody td{padding:7px;text-align:center;border:1px solid var(--border);white-spac
 .comment-input-wrap button{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:Cairo,sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
 
 /* ══ PDF REPORT ══ */
-.pdf-report-preview{background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;font-family:Cairo,sans-serif;}
-.pdf-section{margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:16px;}
-.pdf-section:last-child{border-bottom:none;}
-.pdf-section-title{font-size:14px;font-weight:900;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
-.pdf-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-.pdf-stat-box{background:var(--sky);border-radius:8px;padding:10px;text-align:center;}
-.pdf-stat-box .num{font-size:24px;font-weight:900;color:var(--navy);}
-.pdf-stat-box .lbl{font-size:11px;color:var(--muted);}
+.pdf-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;}
+.pdf-stat-box{background:var(--sky);border-radius:8px;padding:12px;text-align:center;}
+.pdf-stat-box .num{font-size:26px;font-weight:900;color:var(--navy);}
+.pdf-stat-box .lbl{font-size:11px;color:var(--muted);margin-top:2px;}
 @media(max-width:600px){.pdf-stat-grid{grid-template-columns:1fr 1fr;}}
-
-/* ══ ADVANCED SEARCH ══ */
-.adv-search-panel{background:var(--sky);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;display:none;}
-.adv-search-panel.open{display:block;}
-.adv-search-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-@media(max-width:600px){.adv-search-grid{grid-template-columns:1fr;}}
-
 </style>
 
 <!-- ══ PAGE: DASHBOARD ══ -->
@@ -2453,25 +2380,22 @@ tbody td{padding:7px;text-align:center;border:1px solid var(--border);white-spac
       <label>الترتيب:</label><select id="f-sort" onchange="renderTable(true)"><option value="newest">الأحدث</option><option value="oldest">الأقدم</option><option value="name">بالاسم</option><option value="deadline">بالموعد</option></select>
       <label>القرية:</label><select id="f-village" onchange="renderTable(true)" style="max-width:130px;"><option value="">الكل</option></select>
       <button class="btn btn-sm btn-outline" onclick="clearFilters()">✖ مسح</button>
-      <button class="btn btn-sm btn-primary" onclick="toggleAdvSearch()">🔍 بحث متقدم</button>
+      <button class="btn btn-sm" style="background:var(--blue);color:#fff;" onclick="document.getElementById('adv-search-panel').classList.toggle('open')">🔍 بحث متقدم</button>
     </div>
-    <!-- بحث متقدم -->
     <div class="adv-search-panel" id="adv-search-panel">
-      <div style="font-weight:700;color:var(--navy);margin-bottom:10px;font-size:13px;">🔍 بحث متقدم — ابحث بأكثر من حقل في نفس الوقت</div>
+      <div style="font-weight:700;color:var(--navy);margin-bottom:10px;font-size:13px;">🔍 بحث في أكثر من حقل في نفس الوقت</div>
       <div class="adv-search-grid">
         <div class="field"><label>الاسم</label><input type="text" id="as-name" placeholder="جزء من الاسم" oninput="renderTable(true)"></div>
         <div class="field"><label>الرقم القومي</label><input type="text" id="as-natid" placeholder="الرقم القومي" class="num" oninput="renderTable(true)"></div>
         <div class="field"><label>التليفون</label><input type="text" id="as-tel" placeholder="رقم التليفون" class="num" oninput="renderTable(true)"></div>
         <div class="field"><label>رقم التقنين الجديد</label><input type="text" id="as-newtq" placeholder="رقم التقنين" class="num" oninput="renderTable(true)"></div>
         <div class="field"><label>رقم الرفع المساحى</label><input type="text" id="as-anum" placeholder="رقم الرفع" class="num" oninput="renderTable(true)"></div>
-        <div class="field"><label>العنوان / القرية</label><input type="text" id="as-address" placeholder="العنوان" oninput="renderTable(true)"></div>
-        <div class="field"><label>من تاريخ</label><input type="date" id="as-date-from" oninput="renderTable(true)"></div>
-        <div class="field"><label>إلى تاريخ</label><input type="date" id="as-date-to" oninput="renderTable(true)"></div>
-        <div class="field"><label>أضافه</label><input type="text" id="as-added-by" placeholder="اسم أو إيميل" oninput="renderTable(true)"></div>
+        <div class="field"><label>العنوان / القرية</label><input type="text" id="as-addr" placeholder="العنوان" oninput="renderTable(true)"></div>
+        <div class="field"><label>من تاريخ</label><input type="date" id="as-from" oninput="renderTable(true)"></div>
+        <div class="field"><label>إلى تاريخ</label><input type="date" id="as-to" oninput="renderTable(true)"></div>
+        <div class="field"><label>أضافه</label><input type="text" id="as-by" placeholder="اسم أو إيميل" oninput="renderTable(true)"></div>
       </div>
-      <div style="margin-top:10px;">
-        <button class="btn btn-sm btn-danger" onclick="clearAdvSearch()">✖ مسح البحث المتقدم</button>
-      </div>
+      <button class="btn btn-sm btn-danger" style="margin-top:8px;" onclick="clearAdvSearch()">✖ مسح البحث المتقدم</button>
     </div>
     <div class="print-bar" id="print-bar"><span class="print-bar-txt">🖨️ محدد: <span id="print-sel-count">0</span></span><button class="btn btn-sm" style="background:#fff;color:var(--navy);font-weight:700;" onclick="printMultiple()">🖨️ طباعة</button><button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:#fff;" onclick="selectAllForPrint()">☑️ تحديد الكل</button><button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:#fff;" onclick="clearPrintSel()">✖ إلغاء</button></div>
     <div class="card-body" style="padding:0;"><div class="records-wrap"><table id="recordsTable">
@@ -2525,10 +2449,10 @@ tbody td{padding:7px;text-align:center;border:1px solid var(--border);white-spac
 <!-- ══ PAGE: REPORT ══ -->
 <div id="pg-report" class="page">
   <div class="card">
-    <div class="card-header"><div class="card-header-left"><span class="icon">📄</span><h2>التقرير الشامل</h2></div></div>
+    <div class="card-header"><div class="card-header-left"><span class="icon">📄</span><h2>التقرير الأسبوعى</h2></div></div>
     <div class="card-body">
-      <div class="alert alert-info">💡 تقرير شامل لحالة جميع الطلبات — يمكن تحميله كـ PDF أو Excel</div>
-      <div id="report-preview" class="pdf-report-preview"></div>
+      <div class="alert alert-info">💡 تقرير شامل لحالة جميع الطلبات</div>
+      <div id="report-preview"></div>
       <div class="btn-bar" style="margin-top:16px;">
         <button class="btn btn-primary" onclick="generateReport()">🔄 تحديث</button>
         <button class="btn btn-danger" onclick="exportReportPDF()" data-role="admin,supervisor">📄 تحميل PDF</button>
@@ -2584,12 +2508,9 @@ tbody td{padding:7px;text-align:center;border:1px solid var(--border);white-spac
       <div class="field"><label>الملاحظات</label><input type="text" id="e_notes"></div>
       <div class="field span2"><label>الحالة</label><select id="e_status" class="field-select"><option value="pending">⏳ ناقص</option><option value="tqonly">🔢 تقنين فقط</option><option value="complete">✅ مكتمل</option></select></div>
     </div>
-    <!-- التعليقات -->
     <div class="comments-wrap">
-      <div style="font-weight:700;color:var(--navy);font-size:13px;margin-bottom:10px;">💬 التعليقات والملاحظات الداخلية</div>
-      <div id="comments-list" style="max-height:200px;overflow-y:auto;margin-bottom:8px;">
-        <div style="text-align:center;color:var(--muted);font-size:12px;padding:12px;">لا توجد تعليقات بعد</div>
-      </div>
+      <div style="font-weight:700;color:var(--navy);font-size:13px;margin-bottom:8px;">💬 تعليقات داخلية</div>
+      <div id="comments-list" style="max-height:180px;overflow-y:auto;margin-bottom:8px;"><div style="text-align:center;color:var(--muted);font-size:12px;padding:10px;">لا توجد تعليقات</div></div>
       <div class="comment-input-wrap">
         <input type="text" id="comment-input" placeholder="اكتب تعليقاً..." onkeypress="if(event.key==='Enter')addComment()">
         <button onclick="addComment()">إرسال ✉️</button>
