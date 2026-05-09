@@ -3389,13 +3389,13 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   <div class="paste-zone"><h3>📋 لصق سريع من الواتس</h3><p>الصق نص الشخص ثم اضغط "تحليل"</p><textarea id="pasteInput" placeholder="الصق النص هنا..."></textarea><div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;"><button class="btn btn-primary btn-sm" onclick="parsePaste()">⚡ تحليل وملء الفورم</button><button class="btn btn-sm" onclick="openOcrScanner()" style="background:linear-gradient(135deg,#7B2FF7,#3B82F6);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-family:Cairo,sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">📷 مسح مستند ذكي</button><span class="parse-status" id="parseStatus"></span></div></div>
 
   <!-- ══ Modal مسح مستند OCR ══ -->
-  <div class="modal-overlay" id="ocrModal" style="z-index:9999;">
-    <div class="modal-box" style="max-width:500px;width:95%;">
-      <div class="modal-header" style="background:linear-gradient(135deg,#7B2FF7,#3B82F6);">
+  <div class="modal-overlay" id="ocrModal" style="z-index:9999;align-items:flex-start;padding-top:20px;">
+    <div class="modal-box" style="max-width:500px;width:95%;max-height:90vh;display:flex;flex-direction:column;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#7B2FF7,#3B82F6);flex-shrink:0;">
         <h3>📷 مسح مستند ذكي</h3>
         <button class="modal-close" onclick="closeModal('ocrModal')">✕</button>
       </div>
-      <div class="modal-body" style="padding:20px;">
+      <div class="modal-body" style="padding:20px;overflow-y:auto;flex:1;">
         <!-- منطقة رفع الصورة -->
         <div id="ocr-upload-zone"
           onclick="document.getElementById('ocr-file-input').click()"
