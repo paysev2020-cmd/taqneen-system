@@ -2559,7 +2559,7 @@ window.editWaTemplate = function(id) {
   saveWaTemplate(t);
 };
 
-// ══ المساعد الذكي (Claude AI) ══
+// ══ المساعد الذكي (Gemini AI) ══
 var aiHistory = [];
 window.openAiAssistant = function() {
   document.getElementById('aiModal').classList.add('show');
@@ -2596,42 +2596,44 @@ window.sendAiMsg = async function() {
   const tqonly = records.filter(r=>r.status==='tqonly').length;
   const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-7);
   const late = records.filter(r=>r.adddate&&new Date(r.adddate)<cutoff&&r.status!=='complete');
+  const pct = total ? Math.round(complete/total*100) : 0;
 
-  const context = `أنت مساعد ذكي لنظام إدارة طلبات التقنين. البيانات الحالية:
+  const systemPrompt = `أنت مساعد ذكي لنظام إدارة طلبات التقنين. البيانات الحالية:
 - إجمالي الطلبات: ${total}
-- مكتمل: ${complete}
+- مكتمل: ${complete} (${pct}%)
 - تقنين فقط: ${tqonly}
 - ناقص: ${pending}
 - متأخر (+7 أيام): ${late.length}
-- نسبة الإنجاز: ${total?Math.round(complete/total*100):0}%
 أسماء أول 10 سجلات: ${records.slice(0,10).map(r=>r.name).join('، ')}
-أجب بالعربي بشكل مختصر ومفيد.`;
+أجب بالعربي بشكل مختصر ومفيد ومباشر.`;
 
-  aiHistory.push({ role: 'user', content: msg });
+  aiHistory.push({ role: 'user', parts: [{ text: msg }] });
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: context,
-        messages: aiHistory,
-      })
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyBm3U5-Sl7pHh1Kvx-r_jYfMpg-rIqS_X4`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: aiHistory,
+          generationConfig: { maxOutputTokens: 800 },
+        })
+      }
+    );
     const data = await res.json();
-    const reply = data.content?.[0]?.text || 'عذراً، حدث خطأ.';
-    aiHistory.push({ role: 'assistant', content: reply });
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'عذراً، لم أفهم السؤال.';
+    aiHistory.push({ role: 'model', parts: [{ text: reply }] });
 
     const loadEl = document.getElementById(loadId);
     if (loadEl) loadEl.outerHTML = `<div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-      <div style="background:var(--sky);color:var(--text);border-radius:14px 14px 14px 4px;padding:10px 14px;max-width:85%;font-size:13px;line-height:1.6;">${reply.replace(/\n/g,'<br>')}</div>
+      <div style="background:var(--sky);color:var(--text);border-radius:14px 14px 14px 4px;padding:10px 14px;max-width:85%;font-size:13px;line-height:1.6;">${reply.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')}</div>
     </div>`;
   } catch(e) {
     const loadEl = document.getElementById(loadId);
     if (loadEl) loadEl.outerHTML = `<div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-      <div style="background:#fde8e8;color:var(--red);border-radius:14px;padding:10px 14px;font-size:12px;">❌ خطأ في الاتصال</div>
+      <div style="background:#fde8e8;color:var(--red);border-radius:14px;padding:10px 14px;font-size:12px;">❌ خطأ: ${e.message}</div>
     </div>`;
   }
   msgDiv.scrollTop = msgDiv.scrollHeight;
