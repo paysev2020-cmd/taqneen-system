@@ -424,6 +424,9 @@ window.saveEdit = async function() {
     updatedBy:    currentUser.email,
     updatedName:  currentUser.displayName||currentUser.email,
   };
+  // حفظ الصور لو اتغيرت
+  if(editPhotos && editPhotos.length > 0) upd.photos = editPhotos;
+  else if(editPhotos && editPhotos.length === 0) upd.photos = [];
   try {
     await updateDoc(doc(db,'records',editDocId), upd);
     await logAudit('edit', `${upd.name||'—'} — بواسطة: ${upd.updatedName}`);
@@ -699,43 +702,72 @@ window.printMultiple=function(){
 function parseBlock(lines){
   lines=lines.map(l=>l.trim()).filter(Boolean);
   const RX={
-    natid:/^\d{14}$/,phone:/^0\d{9,10}$/,
+    // رقم قومي: 14 رقم سواء وحده أو بعد / أو "الرقم القومي"
+    natid:/^\d{14}$/,
+    natidLabeled:/(?:الرقم\s*القوم[يى]|رقم\s*قوم[يى]|ق\.ق|ق\.م)\s*[\/\-:،,]?\s*(\d{14})/i,
+    natidSlash:/^[\/\\]\s*(\d{14})$/,
+    // تليفون: يبدأ بـ 0 أو بعد /
+    phone:/^0\d{9,10}$/,
+    phoneLabeled:/(?:تليفون|موبايل|هاتف|جوال|رقم|tel|phone)\s*[\/\-:،,]?\s*(0\d{9,10})/i,
+    phoneSlash:/^[\/\\]\s*(0\d{9,10})$/,
     anum:/A-[A-Z\d][\w\-]{10,}/i,newTq:/\b(6\d{7,8})\b/,
-    area:/المساح[ةه]\s*[\/\-:]?\s*([\d\.]+)/i,areaStd:/^([\d\.]+)\s*متر/,
-    north:/(?:الحد\s*)?(?:البحر[ىي]|الشمال[ىي]?|شمال)\s*[\-\/\\\u0640:،,]\s*(.*)/i,
-    south:/(?:الحد\s*)?(?:القبل[ىي]|الجنوب[ىي]?|جنوب)\s*[\-\/\\\u0640:،,]\s*(.*)/i,
-    east:/(?:الحد\s*)?(?:الشرق[ىي]|شرق)\s*[\-\/\\\u0640:،,]\s*(.*)/i,
-    west:/(?:الحد\s*)?(?:الغرب[ىي]|غرب)\s*[\-\/\\\u0640:،,]\s*(.*)/i,
+    area:/المساح[ةه]\s*[\/\-:]?\s*([\d\.]+)/i,
+    areaStd:/^([\d\.]+)\s*متر/,
+    areaNum:/^عدد\s*الامتار\s*[\/\-:،,]?\s*([\d\.]+)/i,
+    north:/(?:الحد\s*)?(?:البحر[ىي]|الشمال[ىي]?|شمال)\s*[\/\-\\\u0640:،,\s]\s*(.*)/i,
+    south:/(?:الحد\s*)?(?:القبل[ىي]|الجنوب[ىي]?|جنوب)\s*[\/\-\\\u0640:،,\s]\s*(.*)/i,
+    east:/(?:الحد\s*)?(?:الشرق[ىي]|شرق)\s*[\/\-\\\u0640:،,\s]\s*(.*)/i,
+    west:/(?:الحد\s*)?(?:الغرب[ىي]|غرب)\s*[\/\-\\\u0640:،,\s]\s*(.*)/i,
     landmark:/(?:اقرب?\s*علام[هة]?|علام[هة]\s*مميز[هة]?)\s*[\/\-:]?\s*(.*)/i,
     building:/^(منزل|أرض|ارض|مبنى|مبني|شقة|شقه|دكان|محل|عقار|فيلا|برج|عمارة)\b/i,
     address:/(?:عزب[ةه]?|شارع|قري[ةه]?|ميت|كفر|بني|دسوق|بلقاس|ناحي|حارة|منشأة|قلبشو|السماح|المستعمر|الجزاير|دملاش|النجاير)/i,
+    notes:/^(?:ملاحظات?|notes?)\s*[\/\-:،,]?\s*(.*)/i,
     skip:/(?:رقم\s*دفع|الرقم\s*المرجعي|رقم\s*الطلب|فوري|gmail|@)/i,
   };
   let r={name:'',natid:'',tel1:'',tel2:'',tel3:'',address:'',area:'',landmark:'',
-         oldtq:'',newtq:'',anum:'',north:'',south:'',east:'',west:''};
+         notes:'',oldtq:'',newtq:'',anum:'',north:'',south:'',east:'',west:''};
   let phones=[],nameFound=false,lastBorder=null;
   for(const line of lines){
     if(!line||RX.skip.test(line))continue;
+
+    // رقم قومي بأي صيغة
     if(RX.natid.test(line)){r.natid=line;lastBorder=null;continue;}
+    const natLab=RX.natidLabeled.exec(line);if(natLab&&!r.natid){r.natid=natLab[1];lastBorder=null;continue;}
+    const natSlash=RX.natidSlash.exec(line);if(natSlash&&!r.natid){r.natid=natSlash[1];lastBorder=null;continue;}
+
+    // تليفون بأي صيغة
     if(RX.phone.test(line)){phones.push(line);lastBorder=null;continue;}
+    const telLab=RX.phoneLabeled.exec(line);if(telLab){phones.push(telLab[1]);lastBorder=null;continue;}
+    const telSlash=RX.phoneSlash.exec(line);if(telSlash){phones.push(telSlash[1]);lastBorder=null;continue;}
+
+    // رقم الرفع
     const am=RX.anum.exec(line);if(am&&!r.anum){r.anum=am[0];lastBorder=null;continue;}
+    // رقم التقنين
     const tqm=RX.newTq.exec(line);if(tqm&&!r.newtq){r.newtq=tqm[1];continue;}
+    // المساحة
+    const anm=RX.areaNum.exec(line);if(anm&&!r.area){r.area=anm[1];lastBorder=null;continue;}
     const arm=RX.area.exec(line);if(arm&&!r.area){r.area=arm[1];lastBorder=null;continue;}
     const arms=RX.areaStd.exec(line);if(arms&&!r.area){r.area=arms[1];lastBorder=null;continue;}
+    // علامة مميزة
     const lmm=RX.landmark.exec(line);if(lmm){r.landmark=lmm[1]?lmm[1].trim():line;lastBorder=null;continue;}
+    // ملاحظات
+    const notm=RX.notes.exec(line);if(notm){r.notes=notm[1]?notm[1].trim():line;lastBorder=null;continue;}
+    // الحدود
     const nm=RX.north.exec(line);if(nm){r.north=nm[1].trim();lastBorder='north';continue;}
     const sm=RX.south.exec(line);if(sm){r.south=sm[1].trim();lastBorder='south';continue;}
     const em=RX.east.exec(line);if(em){r.east=em[1].trim();lastBorder='east';continue;}
     const wm=RX.west.exec(line);if(wm){r.west=wm[1].trim();lastBorder='west';continue;}
+    // استكمال الحدود في السطر التالي
     if(lastBorder&&line.length>2){
       const isBK=RX.north.test(line)||RX.south.test(line)||RX.east.test(line)||RX.west.test(line);
       const isB=RX.building.test(line),isL=RX.landmark.test(line),isA=RX.areaStd.test(line);
       const hasAr=/[\u0600-\u06FF]{3,}/.test(line)&&!/^[\d\.]+\s*متر/.test(line);
-      if(!isBK&&!isB&&!isL&&!isA&&hasAr){r[lastBorder]=(r[lastBorder]?' / ':'')+line;continue;}
+      if(!isBK&&!isB&&!isL&&!isA&&hasAr){r[lastBorder]+=(r[lastBorder]?' / ':'')+line;continue;}
+      else{lastBorder=null;}
     }
-    if(RX.building.test(line)&&!r.landmark){r.landmark=line;lastBorder=null;continue;}
+    if(RX.building.test(line)&&!r.notes){r.notes=line;lastBorder=null;continue;}
     if(RX.address.test(line)&&!r.address){r.address=line;lastBorder=null;continue;}
-    if(!nameFound&&!/^\d/.test(line)&&line.length>3){r.name=line;nameFound=true;lastBorder=null;continue;}
+    if(!nameFound&&!/^\d/.test(line)&&!/^[\/\\]/.test(line)&&line.length>3){r.name=line;nameFound=true;lastBorder=null;continue;}
   }
   if(phones[0])r.tel1=phones[0];if(phones[1])r.tel2=phones[1];if(phones[2])r.tel3=phones[2];
   return r;
@@ -1418,7 +1450,9 @@ window.showPage=function(id){
   const pages=['pg-dash','pg-form','pg-import','pg-records','pg-late','pg-dup','pg-audit','pg-report','pg-backup'];
   const i=pages.indexOf(id);if(i>=0)document.querySelectorAll('.nav-tab')[i]?.classList.add('active');
   const fn={'pg-dash':refreshAll,'pg-records':()=>renderTable(true),'pg-late':renderLate,
-    'pg-dup':renderDups,'pg-audit':renderAudit,'pg-report':generateReport,'pg-backup':renderTeamPage,'pg-team':renderTeamPage};
+    'pg-dup':renderDups,'pg-audit':renderAudit,'pg-report':generateReport,'pg-backup':renderTeamPage,'pg-team':renderTeamPage,
+    'pg-chat':()=>{switchChat(chatChannel||'public',chatPrivateWith,chatPrivateName);}
+  };
   if(fn[id])fn[id]();
 };
 
@@ -2325,13 +2359,34 @@ window.loadComments=async function(docId){
     var snap=await getDocs(query(collection(db,'records',docId,'comments'),orderBy('timestamp','asc')));
     if(snap.empty){list.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:10px;">لا توجد تعليقات</div>';return;}
     list.innerHTML=snap.docs.map(function(d){
-      var c=d.data();
+      var c=d.data(); var cid=d.id;
       var init=(c.userName||'?').slice(0,2);
-      return '<div class="comment-item"><div class="comment-avatar">'+init+'</div><div class="comment-bubble"><div class="c-user">'+(c.userName||c.userEmail||'مجهول')+'</div><div class="c-text">'+c.text+'</div><div class="c-time">'+(c.time||'')+'</div></div></div>';
+      var canDel=can.edit()||c.userEmail===currentUser?.email;
+      var delBtn=canDel?'<button onclick="deleteComment(\''+docId+'\',\''+cid+'\')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:11px;padding:2px 4px;margin-right:4px;" title="حذف">🗑</button>':'';
+      return '<div class="comment-item"><div class="comment-avatar">'+init+'</div><div class="comment-bubble"><div class="c-user" style="display:flex;justify-content:space-between;align-items:center;">'+(c.userName||c.userEmail||'مجهول')+delBtn+'</div><div class="c-text">'+c.text+'</div><div class="c-time">'+(c.time||'')+'</div></div></div>';
     }).join('');
     list.scrollTop=list.scrollHeight;
+    // تحميل صور السجل في modal التعديل
+    var rec=records.find(function(r){return r._docId===docId;});
+    if(rec) loadEditPhotos(rec);
   }catch(e){list.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:8px;">تعذر التحميل</div>';}
 };
+
+window.deleteComment=async function(docId,commentId){
+  if(!confirm('حذف هذا التعليق؟'))return;
+  try{
+    await deleteDoc(doc(db,'records',docId,'comments',commentId));
+    await window.loadComments(docId);
+    commentCounts[docId]=Math.max(0,(commentCounts[docId]||1)-1);
+    var badge=document.getElementById('cb-'+docId);
+    if(badge){
+      if(commentCounts[docId]>0){badge.textContent=commentCounts[docId];badge.style.display='inline';}
+      else{badge.style.display='none';}
+    }
+    showToast('✅ تم حذف التعليق');
+  }catch(e){showToast('❌ خطأ: '+e.message);}
+};
+
 window.addComment=async function(){
   if(!currentCommentDocId)return;
   var input=document.getElementById('comment-input');
@@ -2348,14 +2403,139 @@ window.addComment=async function(){
     commentCounts[currentCommentDocId]=(commentCounts[currentCommentDocId]||0)+1;
     var badge=document.getElementById('cb-'+currentCommentDocId);
     if(badge){badge.textContent=commentCounts[currentCommentDocId];badge.style.display='inline';}
-    // إشعار تيليجرام
-    var recName = records.find(function(r){return r._docId===currentCommentDocId;})?.name||'—';
-    if(typeof tgNotifyComment==='function') tgNotifyComment(recName, text, currentUser?.displayName||currentUser?.email||'مجهول');
+    var recName=records.find(function(r){return r._docId===currentCommentDocId;})?.name||'—';
+    if(typeof tgNotifyComment==='function') tgNotifyComment(recName,text,currentUser?.displayName||currentUser?.email||'مجهول');
     showToast('✅ تم إضافة التعليق');
   }catch(e){showToast('❌ خطأ: '+e.message);}
 };
 
+// ══ صور في التعديل ══
+var editPhotos=[];
+function loadEditPhotos(rec){
+  editPhotos=rec.photos?[...rec.photos]:rec.photo?[rec.photo]:[];
+  renderEditPhotoGrid();
+}
+function renderEditPhotoGrid(){
+  var grid=document.getElementById('edit-photos-grid');
+  var count=document.getElementById('edit-photos-count');
+  if(!grid)return;
+  if(count)count.textContent=editPhotos.length+' / 5 صور';
+  grid.innerHTML=editPhotos.map(function(p,i){
+    return '<div style="position:relative;"><img src="'+p+'" style="width:70px;height:70px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">'
+    +'<button onclick="removeEditPhoto('+i+')" style="position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;line-height:18px;text-align:center;">✕</button></div>';
+  }).join('');
+}
+window.removeEditPhoto=function(i){editPhotos.splice(i,1);renderEditPhotoGrid();};
+window.clearEditPhotos=function(){editPhotos=[];renderEditPhotoGrid();};
+window.handleEditPhotoUpload=function(input){
+  var files=Array.from(input.files);
+  if(!files.length)return;
+  var remaining=5-editPhotos.length;
+  if(remaining<=0){showToast('⚠️ الحد الأقصى 5 صور');return;}
+  files.slice(0,remaining).forEach(function(file){
+    var reader=new FileReader();
+    reader.onload=function(e){editPhotos.push(e.target.result);renderEditPhotoGrid();};
+    reader.readAsDataURL(file);
+  });
+  input.value='';
+};
+
 // ══ PDF REPORT ══
+// ══ TEAM CHAT ══
+var chatChannel='public';
+var chatPrivateWith=null;
+var chatPrivateName='';
+var unsubChat=null;
+
+function getChatId(){
+  if(chatChannel==='public')return'public';
+  var ids=[currentUser.uid,chatPrivateWith].sort();
+  return'private_'+ids.join('_');
+}
+
+window.switchChat=function(type,uid,name){
+  chatChannel=type;chatPrivateWith=uid||null;chatPrivateName=name||'';
+  document.getElementById('private-chat-menu').style.display='none';
+  var title=document.getElementById('chat-title');
+  if(title)title.textContent=type==='public'?'💬 المحادثة العامة للفريق':'🔒 محادثة خاصة مع: '+name;
+  var pb=document.getElementById('chat-public-btn');
+  var prb=document.getElementById('chat-private-btn');
+  if(pb){pb.style.background=type==='public'?'var(--navy)':'var(--sky)';pb.style.color=type==='public'?'#fff':'var(--navy)';}
+  if(prb){prb.style.background=type!=='public'?'var(--navy)':'var(--sky)';prb.style.color=type!=='public'?'#fff':'var(--navy)';}
+  loadChatMessages();
+};
+
+window.togglePrivateChatMenu=function(){
+  var menu=document.getElementById('private-chat-menu');
+  if(!menu)return;
+  var isOpen=menu.style.display!=='none';
+  menu.style.display=isOpen?'none':'block';
+  if(!isOpen)renderPrivateChatList();
+};
+
+document.addEventListener('click',function(e){
+  var menu=document.getElementById('private-chat-menu');
+  if(menu&&!e.target.closest('#chat-private-btn')&&!e.target.closest('#private-chat-menu'))
+    menu.style.display='none';
+});
+
+function renderPrivateChatList(){
+  var list=document.getElementById('private-chat-list');
+  if(!list)return;
+  var members=teamMembers.filter(function(m){return m.email!==currentUser?.email&&m.role!=='blocked'&&m.uid;});
+  if(!members.length){list.innerHTML='<div style="padding:10px 12px;color:var(--muted);font-size:12px;">لا يوجد أعضاء</div>';return;}
+  list.innerHTML=members.map(function(m){
+    return'<div onclick="switchChat(\'private\',\''+m.uid+'\',\''+m.name+'\')" style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;" onmouseover="this.style.background=\'var(--sky)\'" onmouseout="this.style.background=\'\'">'
+      +'<div style="width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">'+( m.name||'?').slice(0,2)+'</div>'
+      +'<div><div style="font-weight:700;">'+m.name+'</div><div style="font-size:10px;color:var(--muted);">'+m.email+'</div></div></div>';
+  }).join('');
+}
+
+function loadChatMessages(){
+  if(unsubChat){unsubChat();unsubChat=null;}
+  var msgDiv=document.getElementById('chat-messages');
+  if(!msgDiv)return;
+  msgDiv.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:20px;">جارى التحميل...</div>';
+  var chatId=getChatId();
+  unsubChat=onSnapshot(query(collection(db,'chats',chatId,'messages'),orderBy('timestamp','asc')),function(snap){
+    msgDiv.innerHTML='';
+    if(snap.empty){msgDiv.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:40px;">لا توجد رسائل — كن أول من يكتب! 👋</div>';return;}
+    snap.docs.forEach(function(d){
+      var m=d.data();var isMe=m.senderEmail===currentUser?.email;
+      var canDel=isMe||(userRole==='admin');
+      var delBtn=canDel?'<button onclick="deleteChatMsg(\''+chatId+'\',\''+d.id+'\')" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.5);font-size:10px;margin-right:4px;">🗑</button>':'';
+      var bubble='<div style="max-width:75%;background:'+(isMe?'var(--navy)':'var(--sky)')+';color:'+(isMe?'#fff':'var(--text)')+';border-radius:'+(isMe?'14px 14px 4px 14px':'14px 14px 14px 4px')+';padding:10px 14px;">'
+        +'<div style="font-size:10px;font-weight:700;opacity:.8;margin-bottom:3px;display:flex;justify-content:space-between;">'+(isMe?'أنت':m.senderName||m.senderEmail)+delBtn+'</div>'
+        +'<div style="font-size:13px;line-height:1.5;">'+m.text+'</div>'
+        +'<div style="font-size:9px;opacity:.6;margin-top:4px;text-align:left;">'+m.time+'</div></div>';
+      msgDiv.innerHTML+='<div style="display:flex;justify-content:'+(isMe?'flex-start':'flex-end')+';">'+bubble+'</div>';
+    });
+    msgDiv.scrollTop=msgDiv.scrollHeight;
+  });
+}
+
+window.sendChatMsg=async function(){
+  var input=document.getElementById('chat-input');
+  var text=input?input.value.trim():'';
+  if(!text)return;
+  try{
+    await addDoc(collection(db,'chats',getChatId(),'messages'),{
+      text:text,senderEmail:currentUser?.email||'',
+      senderName:currentUser?.displayName||currentUser?.email||'مجهول',
+      senderUid:currentUser?.uid||'',
+      time:NOW(),timestamp:serverTimestamp(),
+      isPrivate:chatChannel!=='public',
+    });
+    if(input)input.value='';
+  }catch(e){showToast('❌ خطأ: '+e.message);}
+};
+
+window.deleteChatMsg=async function(chatId,msgId){
+  if(!confirm('حذف هذه الرسالة؟'))return;
+  try{await deleteDoc(doc(db,'chats',chatId,'messages',msgId));showToast('✅ تم حذف الرسالة');}
+  catch(e){showToast('❌ خطأ: '+e.message);}
+};
+
 window.exportReportPDF=function(){
   var total=records.length;
   var complete=records.filter(function(r){return r.status==='complete';}).length;
@@ -2508,6 +2688,7 @@ window.exportReportPDF=function(){
     <button class="nav-tab"        data-page="pg-audit"   data-role="admin,supervisor" onclick="showPage('pg-audit')">📝 سجل التغييرات</button>
     <button class="nav-tab"        data-page="pg-report"  onclick="showPage('pg-report')">📄 التقارير</button>
     <button class="nav-tab"        data-page="pg-team"    onclick="showPage('pg-team')">👥 الفريق <span id="new-visitors-badge" style="display:none;background:#e53935;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;margin-right:4px;animation:pulse-badge 1s infinite;">0</span></button>
+    <button class="nav-tab"        data-page="pg-chat"    onclick="showPage('pg-chat')">💬 الشات <span id="chat-badge" style="display:none;background:#e53935;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;margin-right:4px;animation:pulse-badge 1s infinite;">0</span></button>
   </div>
 </div>
 
@@ -2978,6 +3159,33 @@ body.dark #actions-menu button:hover{background:#263238!important;}
       <button class="btn btn-success" onclick="exportBackupJson()" data-role="admin,supervisor">⬇️ تحميل نسخة احتياطية JSON</button>
     </div>
   </div>
+</div><!-- end pg-team -->
+
+<!-- ══ PAGE: CHAT ══ -->
+<div id="pg-chat" class="page">
+  <div class="card" style="height:calc(100vh - 160px);display:flex;flex-direction:column;">
+    <div class="card-header" style="flex-shrink:0;">
+      <div class="card-header-left"><span class="icon">💬</span><h2>شات الفريق</h2></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-sm" id="chat-public-btn" onclick="switchChat('public')" style="background:var(--navy);color:#fff;font-size:11px;">🌐 العام</button>
+        <div style="position:relative;">
+          <button class="btn btn-sm" id="chat-private-btn" onclick="togglePrivateChatMenu()" style="background:var(--sky);color:var(--navy);font-size:11px;">🔒 خاص ▼</button>
+          <div id="private-chat-menu" style="display:none;position:absolute;left:0;top:110%;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.15);min-width:200px;z-index:999;overflow:hidden;" id="pcm">
+            <div style="padding:8px 12px;font-size:11px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--border);">اختر شخصاً للمحادثة الخاصة</div>
+            <div id="private-chat-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:8px 16px;background:var(--sky);border-bottom:1px solid var(--border);font-size:12px;font-weight:700;color:var(--navy);flex-shrink:0;" id="chat-title">💬 المحادثة العامة للفريق</div>
+    <div id="chat-messages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;">
+      <div style="text-align:center;color:var(--muted);font-size:12px;padding:20px;">جارى التحميل...</div>
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;background:#fff;">
+      <input type="text" id="chat-input" placeholder="اكتب رسالة..." style="flex:1;border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-family:Cairo,sans-serif;font-size:13px;outline:none;" onkeypress="if(event.key==='Enter')sendChatMsg()">
+      <button onclick="sendChatMsg()" style="background:var(--navy);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-family:Cairo,sans-serif;font-size:13px;font-weight:700;cursor:pointer;">إرسال ➤</button>
+    </div>
+  </div>
 </div>
 
 </div><!-- end app-screen -->
@@ -3007,6 +3215,18 @@ body.dark #actions-menu button:hover{background:#263238!important;}
       <div class="comment-input-wrap">
         <input type="text" id="comment-input" placeholder="اكتب تعليقاً..." onkeypress="if(event.key==='Enter')addComment()">
         <button onclick="addComment()">إرسال ✉️</button>
+      </div>
+    </div>
+    <!-- إضافة صورة في التعديل -->
+    <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
+      <div style="font-weight:700;color:var(--navy);font-size:13px;margin-bottom:8px;">📷 إضافة / تعديل الصور</div>
+      <div id="edit-photos-grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;"></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <label style="cursor:pointer;background:var(--navy);color:#fff;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;">
+          📎 إضافة صورة <input type="file" accept="image/*" multiple style="display:none;" onchange="handleEditPhotoUpload(this)">
+        </label>
+        <button onclick="clearEditPhotos()" class="btn btn-sm btn-danger" style="font-size:12px;">🗑 مسح الكل</button>
+        <span id="edit-photos-count" style="font-size:11px;color:var(--muted);"></span>
       </div>
     </div></div>
     <div class="modal-footer"><button class="btn btn-warning" onclick="closeModal('editModal')">إلغاء</button><button class="btn btn-primary" onclick="saveEdit()">💾 حفظ</button></div>
