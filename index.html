@@ -174,6 +174,7 @@ const can = {
   delete: () => userRole === 'admin',
   export: () => ['admin','supervisor'].includes(userRole),
   manage: () => userRole === 'admin',
+  readonly: () => userRole === 'readonly',
 };
 
 // ══════════════════════════════════════════════
@@ -265,8 +266,17 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
+// ══ Mask للبيانات الحساسة (مراقب) ══
+function maskVal(val, type) {
+  if(!val) return '—';
+  if(userRole !== 'readonly') return val;
+  if(type === 'natid') return val.slice(0,4) + '●●●●●●●●●●'.slice(0, val.length-4);
+  if(type === 'tel')   return val.slice(0,4) + '●●●●●●'.slice(0, val.length-4);
+  return val;
+}
+
 function roleLabel(r) {
-  return r==='admin'?'مدير النظام':r==='supervisor'?'مشرف':r==='employee'?'موظف':'متابع';
+  return r==='admin'?'مدير النظام':r==='supervisor'?'مشرف':r==='employee'?'موظف':r==='readonly'?'مراقب':'متابع';
 }
 
 function applyRoleUI() {
@@ -280,6 +290,27 @@ function applyRoleUI() {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const waitPage = document.getElementById('pg-waiting');
     if(waitPage) waitPage.classList.add('active');
+    return;
+  }
+
+  // ══ readonly: مراقب — يشوف السجلات والشات فقط ══
+  if(userRole === 'readonly') {
+    // أخفي التبويبات غير المسموح بها
+    ['pg-form','pg-import','pg-team','pg-dup','pg-late','pg-dash'].forEach(pg => {
+      document.querySelectorAll(`.nav-tab[data-page="${pg}"]`).forEach(t => t.style.display='none');
+    });
+    // منع تحديد النص
+    document.body.style.userSelect = 'none';
+    document.body.style.webkitUserSelect = 'none';
+    // منع right-click
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    // منع Ctrl+C / Ctrl+A / Ctrl+S / PrintScreen
+    document.addEventListener('keydown', e => {
+      if(e.ctrlKey && ['c','a','s','p'].includes(e.key.toLowerCase())) e.preventDefault();
+      if(e.key === 'PrintScreen') e.preventDefault();
+    });
+    // إخفاء عمود الإجراءات في الجدول
+    document.querySelectorAll('.col-actions').forEach(el => el.style.display='none');
     return;
   }
 
@@ -1159,7 +1190,7 @@ window.renderTable=function(reset=false){
       <td onclick="event.stopPropagation()"><input type="checkbox" class="row-check" ${isSel?'checked':''} onchange="togglePrintSel_(${r._i})" title="تحديد للطباعة"></td>
       <td><b>${n+1}</b></td>
       <td style="text-align:right;max-width:150px;" title="${r.name}">${r.name}</td>
-      <td>${r.natid||''}</td><td>${r.tel1||''}</td>
+      <td>${maskVal(r.natid,'natid')}</td><td>${maskVal(r.tel1,'tel')}</td>
       <td title="${r.address||''}">${r.address||''}</td>
       <td>${r.area||''}</td><td>${r.newtq||''}</td>
       <td title="${r.anum||''}">${r.anum?r.anum.slice(-8):'—'}</td>
@@ -1478,7 +1509,14 @@ window.showPage=function(id){
     'pg-chat':()=>{
     chatPageOpen=true;
     updateChatBadge(0);
-    switchChat(chatChannel||'public',chatPrivateWith,chatPrivateName);
+    // readonly: يبدأ بالخاص مباشرة ويخفي العام
+    if(userRole==='readonly') {
+      const pubBtn=document.getElementById('chat-public-btn');
+      if(pubBtn) pubBtn.style.display='none';
+      switchChat('private', null, null);
+    } else {
+      switchChat(chatChannel||'public',chatPrivateWith,chatPrivateName);
+    }
   }
   };
   if(fn[id])fn[id]();
@@ -1683,7 +1721,8 @@ window.renderTeamPage = function() {
   const roleOptions = `
     <option value="supervisor">🟡 مشرف</option>
     <option value="employee">🟢 موظف</option>
-    <option value="viewer">👁️ متابع</option>
+    <option value="readonly">👁️ مراقب</option>
+    <option value="viewer">⏳ متابع</option>
     <option value="blocked">🚫 محظور</option>`;
 
   const adminRows = ROLES.admins.map(e => `
@@ -2651,7 +2690,14 @@ document.addEventListener('click',function(e){
 function renderPrivateChatList(){
   var list=document.getElementById('private-chat-list');
   if(!list)return;
-  var members=teamMembers.filter(function(m){return m.email!==currentUser?.email&&m.role!=='blocked'&&m.uid;});
+  var members=teamMembers.filter(function(m){
+    if(m.email===currentUser?.email) return false;
+    if(m.role==='blocked') return false;
+    if(!m.uid) return false;
+    // readonly: يشوف المدير والمشرفين فقط
+    if(userRole==='readonly' && !['admin','supervisor'].includes(m.role)) return false;
+    return true;
+  });
   if(!members.length){list.innerHTML='<div style="padding:10px 12px;color:var(--muted);font-size:12px;">لا يوجد أعضاء</div>';return;}
   list.innerHTML=members.map(function(m){
     return'<div onclick="switchChat(\'private\',\''+m.uid+'\',\''+m.name+'\')" style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;" onmouseover="this.style.background=\'var(--sky)\'" onmouseout="this.style.background=\'\'">'
