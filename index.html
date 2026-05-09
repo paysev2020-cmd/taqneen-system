@@ -247,6 +247,10 @@ onAuthStateChanged(auth, async user => {
     // Hide DEV banner if not in dev mode
     const devBanner = document.getElementById('dev-mode-banner');
     if(devBanner) devBanner.style.display = DEV_MODE ? '' : 'none';
+    // تسجيل الدخول مع بيانات الجهاز
+    logLoginEvent(user);
+    // تحميل قوالب واتساب
+    loadWaTemplates();
     // بدء البوت للمدير
     if(can.manage()){
       setTimeout(function(){ startTgPolling(); }, 2000);
@@ -401,6 +405,11 @@ window.openEdit = function(docId) {
   if(!can.edit()) { showToast('❌ ليس لديك صلاحية التعديل'); return; }
   const r = records.find(x=>x._docId===docId);
   if(!r) return;
+  // قفل السجل المكتمل — فقط المدير يعدل
+  if(r.status==='complete' && !can.manage()) {
+    showToast('🔒 السجل مكتمل ومقفل — فقط المدير يمكنه التعديل');
+    return;
+  }
   editDocId = docId;
   const s=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
   s('e_name',r.name);s('e_natid',r.natid);s('e_address',r.address);
@@ -1129,8 +1138,11 @@ window.renderTable=function(reset=false){
   if(sortF==='name')data.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ar'));
   if(sortF==='deadline')data.sort((a,b)=>(a.deadline||'9999').localeCompare(b.deadline||'9999'));
 
+  // حفظ البيانات المفلترة عشان تحديد الكل يشتغل صح
+  window._filteredData = data;
+
   const tbody=document.getElementById('recordsBody');
-  if(!data.length){tbody.innerHTML='<tr><td colspan="16" class="empty-msg">لا توجد سجلات</td></tr>';renderPagination_(0);return;}
+  if(!data.length){tbody.innerHTML='<tr><td colspan="17" class="empty-msg">لا توجد سجلات</td></tr>';renderPagination_(0);return;}
   const ps=getPS(),total=data.length;
   renderPagination_(total);
   if(ps<9999){const st=(currentPage_-1)*ps;data=data.slice(st,st+ps);}
@@ -1142,6 +1154,7 @@ window.renderTable=function(reset=false){
     const dlCls=!dl?'':dl<today&&r.status!=='complete'?'deadline-late':(today-dl)<7*86400000?'deadline-warn':'deadline-ok';
     const isSel=printSelection.has(r._i);
     const canDel=can.delete();const canEd=can.edit();
+    const isLocked=r.status==='complete'&&!can.manage();
     return`<tr class="${isLate?'tr-late':''} ${isSel?'tr-selected':''}" onclick="rowClick_(event,${r._i})">
       <td onclick="event.stopPropagation()"><input type="checkbox" class="row-check" ${isSel?'checked':''} onchange="togglePrintSel_(${r._i})" title="تحديد للطباعة"></td>
       <td><b>${n+1}</b></td>
@@ -1155,7 +1168,8 @@ window.renderTable=function(reset=false){
       <td>${sbadge(r.status)}</td>
       <td style="font-size:10px;color:var(--muted);">${r.createdName||r.createdBy||''}</td>
       <td onclick="event.stopPropagation()">${(userRole!=='viewer')?`<button class="print-btn" onclick="printCard('${r._docId}')" title="طباعة">🖨️</button>`:'—'}</td>
-      <td onclick="event.stopPropagation()">${canEd?`<button class="edit-btn" onclick="openEdit('${r._docId}')">✏️<span id="cb-${r._docId}" style="background:#e53935;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-right:2px;${(commentCounts[r._docId]||0)>0?'':'display:none'}">${commentCounts[r._docId]||''}</span></button>`:'—'}</td>
+      <td onclick="event.stopPropagation()">${canEd?(isLocked?'<span title="مقفل — مكتمل" style="color:var(--muted);font-size:13px;">🔒</span>':`<button class="edit-btn" onclick="openEdit('${r._docId}')">✏️<span id="cb-${r._docId}" style="background:#e53935;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-right:2px;${(commentCounts[r._docId]||0)>0?'':'display:none'}">${commentCounts[r._docId]||''}</span></button>`):'—'}</td>
+      <td onclick="event.stopPropagation()">${r.tel1?`<button class="edit-btn" onclick="openWaTemplates('${r._docId}')" title="قوالب واتساب" style="color:#25D366;">📱</button>`:'—'}</td>
       <td onclick="event.stopPropagation()">${canDel?`<button class="del-btn" onclick="delRec('${r._docId}')">🗑</button>`:'—'}</td>
     </tr>`;
   }).join('');
@@ -1189,9 +1203,16 @@ window.togglePrintSel_=function(idx){
   });
 };
 window.rowClick_=function(e,idx){if(e.target.tagName==='BUTTON'||e.target.tagName==='INPUT')return;togglePrintSel_(idx);};
-window.selectAllForPrint=function(){records.forEach((_,i)=>printSelection.add(i));updatePrintSelUI_();renderTable();};
+window.selectAllForPrint=function(){
+  (window._filteredData||records).forEach(r=>printSelection.add(r._i));
+  updatePrintSelUI_();renderTable();
+};
 window.clearPrintSel=function(){printSelection.clear();updatePrintSelUI_();renderTable();};
-window.toggleAll=function(checked){if(checked)records.forEach((_,i)=>printSelection.add(i));else printSelection.clear();updatePrintSelUI_();renderTable();};
+window.toggleAll=function(checked){
+  if(checked)(window._filteredData||records).forEach(r=>printSelection.add(r._i));
+  else printSelection.clear();
+  updatePrintSelUI_();renderTable();
+};
 function updatePrintSelUI_(){
   const count=printSelection.size;
   const bar=document.getElementById('print-bar');if(bar)bar.classList.toggle('show',count>0 && userRole!=='viewer');
@@ -2447,6 +2468,175 @@ window.handleEditPhotoUpload=function(input){
   input.value='';
 };
 
+// ══ تسجيل الدخول مع بيانات الجهاز ══
+async function logLoginEvent(user) {
+  try {
+    const ua = navigator.userAgent;
+    const device = /Mobile|Android|iPhone|iPad/.test(ua) ? '📱 موبايل' : '💻 كمبيوتر';
+    const browser = /Chrome/.test(ua)?'Chrome':/Firefox/.test(ua)?'Firefox':/Safari/.test(ua)?'Safari':/Edge/.test(ua)?'Edge':'Unknown';
+    // جلب IP
+    let ip = '—';
+    try {
+      const ipRes = await fetch('https://api.ipify.org?format=json');
+      const ipData = await ipRes.json();
+      ip = ipData.ip || '—';
+    } catch(e) {}
+    await addDoc(collection(db, 'loginLogs'), {
+      email: user.email,
+      name: user.displayName || user.email,
+      role: userRole,
+      ip,
+      device,
+      browser,
+      time: NOW(),
+      timestamp: serverTimestamp(),
+    });
+  } catch(e) {}
+}
+
+// ══ قوالب واتساب ══
+var DEFAULT_WA_TEMPLATES = [
+  { id:'t1', name:'تم استلام الطلب', text:'السلام عليكم ورحمة الله\nنفيدكم بأنه تم استلام طلب التقنين الخاص بـ {الاسم}\nرقم الطلب: {رقم_التقنين}\nوسيتم التواصل معكم قريباً إن شاء الله 🙏' },
+  { id:'t2', name:'تم الانتهاء', text:'السلام عليكم ورحمة الله\nنبشركم بأنه تم الانتهاء من طلب التقنين الخاص بـ {الاسم}\nرقم التقنين: {رقم_التقنين}\nرقم الرفع المساحي: {رقم_الرفع}\nيمكنكم التواصل معنا لاستلام الأوراق 📋' },
+  { id:'t3', name:'ناقص بيانات', text:'السلام عليكم\nبخصوص طلب التقنين الخاص بـ {الاسم}\nيوجد بيانات ناقصة نحتاج استكمالها\nبرجاء التواصل معنا في أقرب وقت 🙏' },
+  { id:'t4', name:'تذكير بالموعد', text:'السلام عليكم {الاسم}\nهذا تذكير بموعد طلب التقنين الخاص بكم\nبرجاء المراجعة في أقرب وقت\nشكراً لتعاونكم 🙏' },
+];
+
+var waTemplates = [...DEFAULT_WA_TEMPLATES];
+
+async function loadWaTemplates() {
+  try {
+    const snap = await getDocs(collection(db, 'waTemplates'));
+    if (!snap.empty) {
+      waTemplates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+  } catch(e) {}
+}
+
+async function saveWaTemplate(tpl) {
+  try {
+    await setDoc(doc(db, 'waTemplates', tpl.id), { name: tpl.name, text: tpl.text });
+    showToast('✅ تم حفظ القالب');
+  } catch(e) { showToast('❌ خطأ: ' + e.message); }
+}
+
+window.openWaTemplates = function(docId) {
+  const r = records.find(x => x._docId === docId);
+  if (!r) return;
+  const modal = document.getElementById('waModal');
+  const list  = document.getElementById('wa-template-list');
+  if (!modal || !list) return;
+  modal.classList.add('show');
+  list.innerHTML = waTemplates.map(t => {
+    const msg = t.text
+      .replace(/{الاسم}/g, r.name||'')
+      .replace(/{رقم_التقنين}/g, r.newtq||'—')
+      .replace(/{رقم_الرفع}/g, r.anum||'—')
+      .replace(/{التليفون}/g, r.tel1||'—')
+      .replace(/{العنوان}/g, r.address||'—');
+    const waLink = 'https://wa.me/2' + (r.tel1||'').replace(/^0/,'') + '?text=' + encodeURIComponent(msg);
+    return `<div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;">
+      <div style="font-weight:700;color:var(--navy);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+        <span>📋 ${t.name}</span>
+        <button onclick="editWaTemplate('${t.id}')" style="background:none;border:none;cursor:pointer;color:var(--blue);font-size:12px;">✏️ تعديل</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);white-space:pre-wrap;margin-bottom:8px;background:var(--sky);padding:8px;border-radius:6px;">${msg}</div>
+      <a href="${waLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" style="width:16px;height:16px;"> إرسال عبر واتساب
+      </a>
+    </div>`;
+  }).join('');
+};
+
+window.editWaTemplate = function(id) {
+  const t = waTemplates.find(x => x.id === id);
+  if (!t) return;
+  const newText = prompt('تعديل نص القالب:', t.text);
+  if (newText === null) return;
+  const newName = prompt('اسم القالب:', t.name);
+  if (newName === null) return;
+  t.text = newText; t.name = newName;
+  saveWaTemplate(t);
+};
+
+// ══ المساعد الذكي (Claude AI) ══
+var aiHistory = [];
+window.openAiAssistant = function() {
+  document.getElementById('aiModal').classList.add('show');
+  aiHistory = [];
+  document.getElementById('ai-messages').innerHTML =
+    '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">👋 أهلاً! أنا مساعدك الذكي.<br>اسألني عن البيانات أو اطلب تقارير بالعربي.</div>';
+};
+
+window.sendAiMsg = async function() {
+  const input = document.getElementById('ai-input');
+  const msg = input?.value.trim();
+  if (!msg) return;
+  input.value = '';
+
+  const msgDiv = document.getElementById('ai-messages');
+
+  // رسالة المستخدم
+  msgDiv.innerHTML += `<div style="display:flex;justify-content:flex-start;margin-bottom:8px;">
+    <div style="background:var(--navy);color:#fff;border-radius:14px 14px 4px 14px;padding:10px 14px;max-width:80%;font-size:13px;">${msg}</div>
+  </div>`;
+  msgDiv.scrollTop = msgDiv.scrollHeight;
+
+  // مؤشر التحميل
+  const loadId = 'ai-load-' + Date.now();
+  msgDiv.innerHTML += `<div id="${loadId}" style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+    <div style="background:var(--sky);border-radius:14px 14px 14px 4px;padding:10px 14px;font-size:13px;color:var(--muted);">جارى التفكير... 🤔</div>
+  </div>`;
+  msgDiv.scrollTop = msgDiv.scrollHeight;
+
+  // بناء سياق البيانات
+  const total = records.length;
+  const complete = records.filter(r=>r.status==='complete').length;
+  const pending = records.filter(r=>r.status==='pending').length;
+  const tqonly = records.filter(r=>r.status==='tqonly').length;
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-7);
+  const late = records.filter(r=>r.adddate&&new Date(r.adddate)<cutoff&&r.status!=='complete');
+
+  const context = `أنت مساعد ذكي لنظام إدارة طلبات التقنين. البيانات الحالية:
+- إجمالي الطلبات: ${total}
+- مكتمل: ${complete}
+- تقنين فقط: ${tqonly}
+- ناقص: ${pending}
+- متأخر (+7 أيام): ${late.length}
+- نسبة الإنجاز: ${total?Math.round(complete/total*100):0}%
+أسماء أول 10 سجلات: ${records.slice(0,10).map(r=>r.name).join('، ')}
+أجب بالعربي بشكل مختصر ومفيد.`;
+
+  aiHistory.push({ role: 'user', content: msg });
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: context,
+        messages: aiHistory,
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'عذراً، حدث خطأ.';
+    aiHistory.push({ role: 'assistant', content: reply });
+
+    const loadEl = document.getElementById(loadId);
+    if (loadEl) loadEl.outerHTML = `<div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+      <div style="background:var(--sky);color:var(--text);border-radius:14px 14px 14px 4px;padding:10px 14px;max-width:85%;font-size:13px;line-height:1.6;">${reply.replace(/\n/g,'<br>')}</div>
+    </div>`;
+  } catch(e) {
+    const loadEl = document.getElementById(loadId);
+    if (loadEl) loadEl.outerHTML = `<div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+      <div style="background:#fde8e8;color:var(--red);border-radius:14px;padding:10px 14px;font-size:12px;">❌ خطأ في الاتصال</div>
+    </div>`;
+  }
+  msgDiv.scrollTop = msgDiv.scrollHeight;
+};
+
 // ══ PDF REPORT ══
 // ══ TEAM CHAT ══
 var chatChannel='public';
@@ -2732,6 +2922,7 @@ window.exportReportPDF=function(){
       <span class="header-icon">📋</span>
       <div>
         <div class="app-title">نظام إدارة طلبات التقنين</div>
+        <button onclick="openAiAssistant()" style="background:linear-gradient(135deg,#5C35A8,#2E75B6);color:#fff;border:none;border-radius:20px;padding:5px 12px;font-family:Cairo,sans-serif;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px;" title="المساعد الذكي">🤖 مساعد ذكي</button>
         <div class="app-subtitle" id="conn-status">🟡 جارى الاتصال...</div>
       </div>
     </div>
@@ -3157,8 +3348,8 @@ body.dark #actions-menu button:hover{background:#263238!important;}
     </div>
     <div class="print-bar" id="print-bar"><span class="print-bar-txt">🖨️ محدد: <span id="print-sel-count">0</span></span><button class="btn btn-sm" style="background:#fff;color:var(--navy);font-weight:700;" onclick="printMultiple()">🖨️ طباعة</button><button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:#fff;" onclick="selectAllForPrint()">☑️ تحديد الكل</button><button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:#fff;" onclick="clearPrintSel()">✖ إلغاء</button></div>
     <div class="card-body" style="padding:0;"><div class="records-wrap"><table id="recordsTable">
-      <thead><tr><th style="width:32px;"><input type="checkbox" id="check-all" class="row-check" onchange="toggleAll(this.checked)"></th><th>م</th><th>الاسم</th><th>الرقم القومي</th><th>تليفون</th><th>العنوان</th><th>المساحة</th><th>تقنين جديد</th><th>رفع مساحى</th><th>إضافة</th><th>موعد نهائى</th><th>الحالة</th><th>أضافه</th><th>طباعة</th><th>تعديل</th><th>حذف</th></tr></thead>
-      <tbody id="recordsBody"><tr><td colspan="16" class="empty-msg">جارى التحميل...</td></tr></tbody>
+      <thead><tr><th style="width:32px;"><input type="checkbox" id="check-all" class="row-check" onchange="toggleAll(this.checked)"></th><th>م</th><th>الاسم</th><th>الرقم القومي</th><th>تليفون</th><th>العنوان</th><th>المساحة</th><th>تقنين جديد</th><th>رفع مساحى</th><th>إضافة</th><th>موعد نهائى</th><th>الحالة</th><th>أضافه</th><th>طباعة</th><th>تعديل</th><th>📱</th><th>حذف</th></tr></thead>
+      <tbody id="recordsBody"><tr><td colspan="17" class="empty-msg">جارى التحميل...</td></tr></tbody>
     </table></div></div>
     <div class="pagination" id="pagination-wrap" style="border-top:1px solid var(--border);"></div>
   </div>
@@ -3266,6 +3457,32 @@ body.dark #actions-menu button:hover{background:#263238!important;}
 </div><!-- end app-screen -->
 
 <!-- MODALS -->
+
+<!-- Modal واتساب -->
+<div class="modal-overlay" id="waModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header"><h3>📱 قوالب واتساب</h3><button class="modal-close" onclick="closeModal('waModal')">✕</button></div>
+    <div class="modal-body" id="wa-template-list"></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('waModal')">إغلاق</button></div>
+  </div>
+</div>
+
+<!-- Modal المساعد الذكي -->
+<div class="modal-overlay" id="aiModal">
+  <div class="modal" style="max-width:580px;">
+    <div class="modal-header" style="background:linear-gradient(135deg,#5C35A8,#2E75B6);">
+      <h3>🤖 المساعد الذكي</h3>
+      <button class="modal-close" onclick="closeModal('aiModal')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0;">
+      <div id="ai-messages" style="height:350px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--sky);"></div>
+      <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;">
+        <input type="text" id="ai-input" placeholder="اسألني أي شيء عن البيانات..." style="flex:1;border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-family:Cairo,sans-serif;font-size:13px;" onkeypress="if(event.key==='Enter')sendAiMsg()">
+        <button onclick="sendAiMsg()" style="background:linear-gradient(135deg,#5C35A8,#2E75B6);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-family:Cairo,sans-serif;font-size:13px;cursor:pointer;">إرسال ✨</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="editModal">
   <div class="modal">
     <div class="modal-header"><h3>✏️ تعديل السجل</h3><button class="modal-close" onclick="closeModal('editModal')">✕</button></div>
