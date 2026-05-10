@@ -436,7 +436,6 @@ window.openEdit = function(docId) {
   if(!can.edit()) { showToast('❌ ليس لديك صلاحية التعديل'); return; }
   const r = records.find(x=>x._docId===docId);
   if(!r) return;
-  // قفل السجل المكتمل — فقط المدير يعدل
   if(r.status==='complete' && !can.manage()) {
     showToast('🔒 السجل مكتمل ومقفل — فقط المدير يمكنه التعديل');
     return;
@@ -450,7 +449,16 @@ window.openEdit = function(docId) {
   s('e_status',r.status);
   document.getElementById('editModal').classList.add('show');
   if(typeof window.loadComments==='function')window.loadComments(docId);
-  loadEditPhotos(r);
+  // جيب الـ document كاملاً عشان تحمّل الصور
+  editPhotos = [];
+  renderEditPhotoGrid();
+  getDoc(doc(db,'records',docId)).then(snap => {
+    if(snap.exists()) {
+      const data = snap.data();
+      editPhotos = data.photos ? [...data.photos] : data.photo ? [data.photo] : [];
+      renderEditPhotoGrid();
+    }
+  }).catch(()=>{ loadEditPhotos(r); });
 };
 
 window.saveEdit = async function() {
