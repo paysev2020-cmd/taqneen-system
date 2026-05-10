@@ -1212,7 +1212,9 @@ window.renderTable=function(reset=false){
       return true;
     });
   }
-  if(sortF==='newest')data.sort((a,b)=>(b.adddate||'').localeCompare(a.adddate||''));
+  const attachF=document.getElementById('f-attach')?.value||'';
+  if(attachF==='yes')data=data.filter(r=>(r.photos&&r.photos.length>0)||r.photo);
+  if(attachF==='no')data=data.filter(r=>!(r.photos&&r.photos.length>0)&&!r.photo);
   if(sortF==='oldest')data.sort((a,b)=>(a.adddate||'').localeCompare(b.adddate||''));
   if(sortF==='name')data.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ar'));
   if(sortF==='deadline')data.sort((a,b)=>(a.deadline||'9999').localeCompare(b.deadline||'9999'));
@@ -1245,6 +1247,7 @@ window.renderTable=function(reset=false){
       <td>${r.adddate||'—'}</td>
       <td class="${dlCls}">${r.deadline||'—'}</td>
       <td>${sbadge(r.status)}</td>
+      <td style="text-align:center;font-size:16px;" title="${(r.photos&&r.photos.length>0)||r.photo?'يوجد مرفقات':'لا توجد مرفقات'}">${(r.photos&&r.photos.length>0)||r.photo?'<span style="color:#22C55E;">✅</span>':'<span style="color:#EF4444;">❌</span>'}</td>
       <td style="font-size:10px;color:var(--muted);">${r.createdName||r.createdBy||''}</td>
       <td onclick="event.stopPropagation()">${(userRole!=='viewer')?`<button class="print-btn" onclick="printCard('${r._docId}')" title="طباعة">🖨️</button>`:'—'}</td>
       <td onclick="event.stopPropagation()">${canEd?(isLocked?'<span title="مقفل — مكتمل" style="color:var(--muted);font-size:13px;">🔒</span>':`<button class="edit-btn" onclick="openEdit('${r._docId}')">✏️<span id="cb-${r._docId}" style="background:#e53935;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-right:2px;${(commentCounts[r._docId]||0)>0?'':'display:none'}">${commentCounts[r._docId]||''}</span></button>`):'—'}</td>
@@ -1935,6 +1938,7 @@ window.closeModal=function(id){document.getElementById(id)?.classList.remove('sh
 window.showToast=function(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);};
 window.clearFilters=function(){
   document.getElementById('f-search').value='';document.getElementById('f-status').value='';
+  const fa=document.getElementById('f-attach');if(fa)fa.value='';
   document.getElementById('f-sort').value='newest';const v=document.getElementById('f-village');if(v)v.value='';
   currentPage_=1;renderTable();
 };
@@ -3388,6 +3392,7 @@ body.dark #actions-menu button:hover{background:#263238!important;}
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <label>بحث:</label><input type="text" id="f-search" placeholder="اسم / رقم / عنوان..." oninput="renderTable(true)" style="width:180px;">
         <label>الحالة:</label><select id="f-status" onchange="renderTable(true)"><option value="">الكل</option><option value="complete">✅ مكتمل</option><option value="tqonly">🔢 تقنين فقط</option><option value="pending">⏳ ناقص</option></select>
+        <label>مرفقات:</label><select id="f-attach" onchange="renderTable(true)"><option value="">الكل</option><option value="yes">✅ مدرجة</option><option value="no">❌ غير مدرجة</option></select>
         <label>الترتيب:</label><select id="f-sort" onchange="renderTable(true)"><option value="newest">الأحدث</option><option value="oldest">الأقدم</option><option value="name">بالاسم</option><option value="deadline">بالموعد</option></select>
         <label>القرية:</label><select id="f-village" onchange="renderTable(true)" style="max-width:120px;"><option value="">الكل</option></select>
         <button class="btn btn-sm btn-outline" onclick="clearFilters()">✖ مسح</button>
@@ -3430,7 +3435,7 @@ body.dark #actions-menu button:hover{background:#263238!important;}
     </div>
     <div class="print-bar" id="print-bar"><span class="print-bar-txt">🖨️ محدد: <span id="print-sel-count">0</span></span><button class="btn btn-sm" style="background:#fff;color:var(--navy);font-weight:700;" onclick="printMultiple()">🖨️ طباعة</button><button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:#fff;" onclick="selectAllForPrint()">☑️ تحديد الكل</button><button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:#fff;" onclick="clearPrintSel()">✖ إلغاء</button></div>
     <div class="card-body" style="padding:0;"><div class="records-wrap"><table id="recordsTable">
-      <thead><tr><th style="width:32px;"><input type="checkbox" id="check-all" class="row-check" onchange="toggleAll(this.checked)"></th><th>م</th><th>الاسم</th><th>الرقم القومي</th><th>تليفون</th><th>العنوان</th><th>المساحة</th><th>تقنين جديد</th><th>رفع مساحى</th><th>إضافة</th><th>موعد نهائى</th><th>الحالة</th><th>أضافه</th><th>طباعة</th><th>تعديل</th><th>📱</th><th>حذف</th></tr></thead>
+      <thead><tr><th style="width:32px;"><input type="checkbox" id="check-all" class="row-check" onchange="toggleAll(this.checked)"></th><th>م</th><th>الاسم</th><th>الرقم القومي</th><th>تليفون</th><th>العنوان</th><th>المساحة</th><th>تقنين جديد</th><th>رفع مساحى</th><th>إضافة</th><th>موعد نهائى</th><th>الحالة</th><th>مرفقات</th><th>أضافه</th><th>طباعة</th><th>تعديل</th><th>📱</th><th>حذف</th></tr></thead>
       <tbody id="recordsBody"><tr><td colspan="17" class="empty-msg">جارى التحميل...</td></tr></tbody>
     </table></div></div>
     <div class="pagination" id="pagination-wrap" style="border-top:1px solid var(--border);"></div>
