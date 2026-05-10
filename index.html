@@ -723,56 +723,70 @@ window.printCard=function(docId){
 window.printMultiple=function(){
   const idxs=[...printSelection];
   if(!idxs.length){showToast('⚠️ لم تحدد أي سجلات');return;}
-  const row=(l,v)=>v?`<tr><td style="font-weight:700;padding:4px 8px;color:#1F4E79;border:1px solid #ccc;white-space:nowrap;">${l}</td><td style="padding:4px 8px;border:1px solid #ccc;">${v}</td></tr>`:'';
+  const checkSVG=`<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="30" height="30"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const today=new Date();
+  const dateStr=today.getDate()+'/'+(today.getMonth()+1)+'/'+today.getFullYear();
+  const row=(l,v)=>v?`<tr><td style="font-weight:700;padding:5px 10px;color:#1F4E79;border:1px solid #ddd;white-space:nowrap;width:140px;font-size:12px;">${l}</td><td style="padding:5px 10px;border:1px solid #ddd;font-size:12px;">${v}</td></tr>`:'';
   const cards=idxs.map(i=>{
     const r=records[i];
-    const stLabel=r.status==='complete'?'✅ مكتمل':r.status==='tqonly'?'🔢 تقنين فقط':'⏳ ناقص';
-    const card1=`<div style="page-break-inside:avoid;border:2px solid #1F4E79;border-radius:8px;padding:16px;margin-bottom:16px;">
-      <div style="font-size:15px;font-weight:900;color:#1F4E79;border-bottom:2px solid #DEEAF1;padding-bottom:6px;margin-bottom:10px;">📋 بطاقة طلب التقنين</div>
-      <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Cairo,sans-serif;">
-        ${row('الاسم',r.name)}${row('الرقم القومي',r.natid)}
-        ${row('تليفون 1',r.tel1)}${row('تليفون 2',r.tel2)}${row('العنوان',r.address)}
-        ${row('المساحة',r.area?r.area+' م²':'')}
-        ${row('بحرى',r.north)}${row('قبلى',r.south)}${row('شرقى',r.east)}${row('غربى',r.west)}
-        ${row('طول بحرى',r.lnorth)}${row('طول قبلى',r.lsouth)}${row('طول شرقى',r.least)}${row('طول غربى',r.lwest)}
-        ${row('العلامة المميزة',r.landmark)}${row('وصف تفصيلي',r.descaddr)}
-        ${row('تقنين قديم',r.oldtq)}${row('تقنين جديد',r.newtq)}${row('رفع مساحى',r.anum)}
-        ${row('تاريخ الرفع',r.adate)}${row('الموعد النهائي',r.deadline)}
-        ${row('ملاحظات',r.notes)}${row('الحالة',stLabel)}${row('تاريخ الإضافة',r.adddate)}${row('أضافه',r.addedby)}
-      </table>
-    </div>`;
-    const card2=`<div style="page-break-before:always;page-break-inside:avoid;font-family:Cairo,sans-serif;text-align:center;padding:30px 20px;border:3px solid #1F4E79;border-radius:12px;margin-bottom:16px;">
-      <div style="width:64px;height:64px;background:#22C55E;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:12px;">✓</div>
-      <div style="font-size:20px;font-weight:900;color:#1a1a1a;margin-bottom:4px;">عملية تسجيل ناجحة</div>
-      <div style="font-size:12px;color:#555;margin-bottom:16px;">تم تسجيل طلب تقنين إلكتروني</div>
-      <div style="background:#FFF9C4;border:2px solid #F59E0B;border-radius:8px;padding:10px 24px;display:inline-block;margin-bottom:16px;">
-        <div style="font-size:10px;color:#92400E;margin-bottom:2px;">رقم الطلب</div>
-        <div style="font-size:26px;font-weight:900;color:#B45309;letter-spacing:2px;">${r.newtq||'—'}</div>
+    return `<div style="page-break-after:always;font-family:'Segoe UI',Tahoma,Cairo,sans-serif;direction:rtl;max-width:500px;margin:0 auto 0;">
+      <!-- بطاقة رقم التقنين -->
+      <div style="background:#fff;border-radius:14px;padding:24px 20px 18px;text-align:center;border:1px solid #e0e0e0;margin-bottom:16px;">
+        <div style="width:56px;height:56px;background:#1a7a4a;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;-webkit-print-color-adjust:exact;print-color-adjust:exact;">${checkSVG}</div>
+        <div style="font-size:20px;font-weight:700;color:#1a1a1a;margin-bottom:5px;">عملية تسجيل ناجحة</div>
+        <div style="font-size:13px;color:#555;margin-bottom:16px;">تم تسجيل طلب تقنين إلكتروني</div>
+        <div style="background:#f5c842;border-radius:10px;padding:10px 18px;display:inline-flex;align-items:center;gap:8px;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+          <span style="font-size:14px;font-weight:700;color:#1a1a1a;"># رقم الطلب&nbsp;</span>
+          <span style="font-size:22px;font-weight:800;color:#c0000a;letter-spacing:1px;">${r.newtq||'—'}</span>
+        </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px dashed #ddd;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="text-align:right;">
+              <span style="font-size:11px;color:#888;display:block;margin-bottom:2px;">مقدم الطلب</span>
+              <span style="font-size:14px;font-weight:700;color:#222;">${r.name||'—'}</span>
+            </div>
+            <div style="text-align:left;">
+              <span style="font-size:11px;color:#888;display:block;margin-bottom:2px;">تاريخ الطباعة</span>
+              <span style="font-size:12px;font-weight:500;color:#555;">${dateStr}</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <table style="width:100%;border-collapse:collapse;font-size:11px;text-align:right;">
-        <tr><td colspan="2" style="background:#1F4E79;color:#fff;padding:6px;font-weight:700;text-align:center;">📋 البيانات التفصيلية</td></tr>
-        ${row('الاسم',r.name)}${row('الرقم القومي',r.natid)}
-        ${row('تليفون 1',r.tel1)}${row('تليفون 2',r.tel2)}
-        ${row('العنوان',r.address)}${row('المساحة',r.area?r.area+' م²':'')}
-        ${row('الحد البحري',r.north)}${row('الحد القبلي',r.south)}
-        ${row('الحد الشرقي',r.east)}${row('الحد الغربي',r.west)}
-        ${row('العلامة المميزة',r.landmark)}
-        ${row('التقنين الجديد',r.newtq)}${row('رقم الرفع المساحي',r.anum)}
-        ${row('ملاحظات',r.notes)}${row('تاريخ الإضافة',r.adddate)}
-      </table>
+      <!-- بيانات تفصيلية -->
+      <div style="border:1px solid #ddd;border-radius:10px;overflow:hidden;">
+        <div style="background:#1F4E79;color:#fff;padding:8px 14px;font-weight:700;font-size:13px;-webkit-print-color-adjust:exact;print-color-adjust:exact;">📋 البيانات التفصيلية</div>
+        <table style="width:100%;border-collapse:collapse;">
+          ${row('الاسم',r.name)}${row('الرقم القومي',r.natid)}
+          ${row('تليفون 1',r.tel1)}${row('تليفون 2',r.tel2)}
+          ${row('العنوان',r.address)}${row('المساحة',r.area?r.area+' م²':'')}
+          ${r.north?row('الحد البحرى',r.north):''}${r.south?row('الحد القبلى',r.south):''}
+          ${r.east?row('الحد الشرقى',r.east):''}${r.west?row('الحد الغربى',r.west):''}
+          ${r.lnorth?row('طول الحد البحرى',r.lnorth):''}${r.lsouth?row('طول الحد القبلى',r.lsouth):''}
+          ${r.least?row('طول الحد الشرقى',r.least):''}${r.lwest?row('طول الحد الغربى',r.lwest):''}
+          ${r.landmark?row('العلامة المميزة',r.landmark):''}
+          ${r.descaddr?row('وصف تفصيلي',r.descaddr):''}
+          ${r.oldtq?row('التقنين القديم',r.oldtq):''}
+          ${row('التقنين الجديد',r.newtq)}
+          ${row('رقم الرفع المساحى',r.anum)}${r.adate?row('تاريخ الرفع',r.adate):''}
+          ${r.deadline?row('الموعد النهائى',r.deadline):''}
+          ${r.notes?row('ملاحظات',r.notes):''}
+          ${row('تاريخ الإضافة',r.adddate)}${row('أضافه',r.createdName||r.addedby||'')}
+        </table>
+      </div>
     </div>`;
-    return card1+card2;
   }).join('');
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head>
     <meta charset="UTF-8"><title>بطاقات التقنين</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-    <style>body{font-family:Cairo,sans-serif;padding:20px;background:#fff;}@media print{@page{size:A4;margin:15mm;}}</style>
+    <style>
+      body{font-family:Cairo,sans-serif;padding:20px;background:#fff;}
+      @media print{@page{size:A4;margin:15mm;}body{padding:0;}}
+    </style>
     </head><body>${cards}<script>window.onload=()=>window.print();<\/script></body></html>`);
   win.document.close();
   printSelection.clear();updatePrintSelUI();renderTable();
-};
-// ══════════════════════════════════════════════
+};// ══════════════════════════════════════════════
 // PARSE HELPERS (WhatsApp + Excel)
 // ══════════════════════════════════════════════
 function parseBlock(lines){
