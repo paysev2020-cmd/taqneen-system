@@ -3439,9 +3439,9 @@ body.dark #actions-menu button:hover{background:#263238!important;}
 
 </div>
 <div class="modal-overlay" id="editModal">
-  <div class="modal">
-    <div class="modal-header"><h3>✏️ تعديل السجل</h3><button class="modal-close" onclick="closeModal('editModal')">✕</button></div>
-    <div class="modal-body"><div class="grid g2">
+  <div class="modal" style="max-height:90vh;display:flex;flex-direction:column;">
+    <div class="modal-header" style="flex-shrink:0;"><h3>✏️ تعديل السجل</h3><button class="modal-close" onclick="closeModal('editModal')">✕</button></div>
+    <div class="modal-body" style="overflow-y:auto;flex:1;"><div class="grid g2">
       <div class="field span2"><label>الاسم</label><input type="text" id="e_name"></div>
       <div class="field"><label>الرقم القومي</label><input type="text" id="e_natid" class="num" maxlength="14"></div>
       <div class="field"><label>العنوان</label><input type="text" id="e_address"></div>
