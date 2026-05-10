@@ -450,6 +450,7 @@ window.openEdit = function(docId) {
   s('e_status',r.status);
   document.getElementById('editModal').classList.add('show');
   if(typeof window.loadComments==='function')window.loadComments(docId);
+  loadEditPhotos(r);
 };
 
 window.saveEdit = async function() {
