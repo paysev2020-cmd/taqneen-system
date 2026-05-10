@@ -1259,7 +1259,8 @@ function updatePrintSelUI_(){
   ['print-sel-count','print-sel-count2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=count;});
   const chkAll=document.getElementById('check-all');
   if(chkAll){chkAll.checked=count>0&&count===records.length;chkAll.indeterminate=count>0&&count<records.length;}
-  const expBtn=document.getElementById('export-sel-btn');if(expBtn)expBtn.style.display=count>0?'':'none';
+  const expBtn=document.getElementById('export-sel-btn');if(expBtn)expBtn.style.display=count>0?'flex':'none';
+  const txtBtn=document.getElementById('export-txt-sel-btn');if(txtBtn)txtBtn.style.display=count>0?'flex':'none';
 }
 
 // ══════════════════════════════════════════════
@@ -2607,7 +2608,60 @@ window.editWaTemplate = function(id) {
   saveWaTemplate(t);
 };
 
-// ══ PDF REPORT ══
+// ══ تصدير نص ══
+window.exportText = function(mode) {
+  var list = mode === 'selected'
+    ? records.filter(r => selectedIds.has(r._docId))
+    : (filteredRecords || records);
+  if (!list.length) { showToast('⚠️ لا توجد سجلات'); return; }
+
+  const statusLabel = s => s==='complete'?'✅ مكتمل':s==='tqonly'?'🔢 تقنين فقط':'⏳ ناقص';
+  const line = '═'.repeat(40);
+
+  const text = list.map((r, i) => {
+    const rows = [
+      line,
+      `${i+1}. ${r.name || '—'}`,
+      r.natid    ? `الرقم القومي    : ${r.natid}`   : '',
+      r.tel1     ? `تليفون 1        : ${r.tel1}`    : '',
+      r.tel2     ? `تليفون 2        : ${r.tel2}`    : '',
+      r.address  ? `العنوان         : ${r.address}` : '',
+      r.area     ? `المساحة         : ${r.area} م²` : '',
+      r.oldtq    ? `تقنين قديم      : ${r.oldtq}`  : '',
+      r.newtq    ? `تقنين جديد      : ${r.newtq}`  : '',
+      r.anum     ? `رقم الرفع       : ${r.anum}`   : '',
+      r.north    ? `الحد الشمالي    : ${r.north}`  : '',
+      r.south    ? `الحد الجنوبي    : ${r.south}`  : '',
+      r.east     ? `الحد الشرقي     : ${r.east}`   : '',
+      r.west     ? `الحد الغربي     : ${r.west}`   : '',
+      r.lnorth   ? `طول الحد الشمالي: ${r.lnorth}` : '',
+      r.lsouth   ? `طول الحد الجنوبي: ${r.lsouth}` : '',
+      r.least    ? `طول الحد الشرقي : ${r.least}`  : '',
+      r.lwest    ? `طول الحد الغربي : ${r.lwest}`  : '',
+      r.unittype ? `نوع الوحدة      : ${r.unittype}`: '',
+      r.paystatus? `حالة الدفع      : ${r.paystatus}`:'',
+      r.cost     ? `التكاليف        : ${r.cost}`   : '',
+      r.landmark ? `علامة مميزة     : ${r.landmark}`: '',
+      r.descaddr ? `وصف تفصيلي      : ${r.descaddr}`: '',
+      r.adate    ? `تاريخ الرفع     : ${r.adate}`  : '',
+      r.deadline ? `الموعد النهائي  : ${r.deadline}`: '',
+      r.adddate  ? `تاريخ الإضافة   : ${r.adddate}`: '',
+      r.addedby  ? `أضافه           : ${r.addedby}`: '',
+      r.notes    ? `ملاحظات         : ${r.notes}`  : '',
+      `الحالة          : ${statusLabel(r.status)}`,
+    ].filter(Boolean).join('\n');
+    return rows;
+  }).join('\n\n') + '\n' + line;
+
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `تقنين_${mode==='selected'?'محددين':'الكل'}_${new Date().toLocaleDateString('ar-EG').replace(/\//g,'-')}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`✅ تم تصدير ${list.length} سجل كملف نص`);
+};
 // ══ TEAM CHAT ══
 var chatChannel='public';
 var chatPrivateWith=null;
@@ -3301,6 +3355,8 @@ body.dark #actions-menu button:hover{background:#263238!important;}
           <button onclick="exportExcel();document.getElementById('actions-menu').classList.remove('open-menu')" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:var(--text);">⬇️ Excel الرئيسي</button>
           <button onclick="exportFiltered();document.getElementById('actions-menu').classList.remove('open-menu')" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">⬇️ Excel المفلتر</button>
           <button onclick="exportSelectedExcel();document.getElementById('actions-menu').classList.remove('open-menu')" id="export-sel-btn" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:none;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">⬇️ Excel المحددين</button>
+          <button onclick="exportText('all');document.getElementById('actions-menu').classList.remove('open-menu')" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">📄 نص الكل</button>
+          <button onclick="exportText('selected');document.getElementById('actions-menu').classList.remove('open-menu')" id="export-txt-sel-btn" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:none;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">📄 نص المحددين</button>
           <button onclick="printTableNow();document.getElementById('actions-menu').classList.remove('open-menu')" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">🖨️ طباعة الجدول</button>
           <button onclick="clearAll();document.getElementById('actions-menu').classList.remove('open-menu')" data-role="admin" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:#C00000;border-top:1px solid var(--border);">🗑️ حذف الكل</button>
           <div style="padding:8px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;">
