@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cross-Origin-Opener-Policy" content="unsafe-none">
 <meta http-equiv="Cross-Origin-Embedder-Policy" content="unsafe-none">
-<title>نظام إدارة طلبات التقنين — Cloud</title>
+<title>نظام التقنين المتكامل — مع نظام الإيصالات</title>
 
 <!-- ═══════════════════════════════════════════════════════
      ⚙️  إعداد Firebase
@@ -328,6 +328,9 @@ function applyRoleUI() {
   if(!can.manage()) {
     document.querySelectorAll('.nav-tab[data-page="pg-team"]').forEach(t=>t.style.display='none');
   }
+  // إظهار تبويب الإيصالات
+  const rBtn = document.getElementById('nav-receipts-btn');
+  if(rBtn) rBtn.style.display = ['admin','supervisor','employee'].includes(userRole) ? '' : 'none';
   if(userRole === 'employee') {
     document.querySelectorAll('.nav-tab[data-page="pg-dup"]').forEach(t=>t.style.display='none');
     document.querySelectorAll('.nav-tab[data-page="pg-late"]').forEach(t=>t.style.display='none');
@@ -783,7 +786,78 @@ window.printMultiple=function(){
       body{font-family:Cairo,sans-serif;padding:20px;background:#fff;}
       @media print{@page{size:A4;margin:15mm;}body{padding:0;}}
     </style>
-    </head><body>${cards}<script>window.onload=()=>window.print();<\/script></body></html>`);
+    </head><body>${cards}<script>window.onload=()=>window.print();<\/script>
+<!-- ══ RECEIPT SYSTEM OVERLAYS ══ -->
+
+<!-- Receipt Toast Container -->
+<div class="r-toast-container" id="rToastContainer"></div>
+
+<!-- Receipt Image Modal -->
+<div class="r-img-modal" id="rImgModal" onclick="rCloseImgModal()">
+  <button class="r-img-modal-close" onclick="rCloseImgModal()">✕</button>
+  <img id="rModalImg" src="" alt="إيصال" onclick="event.stopPropagation()">
+</div>
+
+<!-- Receipt PIN Modal (for log delete/clear) -->
+<div class="r-modal-overlay" id="rPinModal">
+  <div class="r-modal-box">
+    <h3 id="rPinTitle">🔐 تأكيد الهوية</h3>
+    <p id="rPinDesc">أدخل الرقم السري للمتابعة</p>
+    <input type="password" id="rPinInput" placeholder="••••••••" maxlength="20" onkeydown="if(event.key==='Enter')rConfirmPin()">
+    <div class="r-modal-error" id="rPinError"></div>
+    <div class="r-modal-btns">
+      <button class="r-modal-btn-ok" onclick="rConfirmPin()">تأكيد</button>
+      <button class="r-modal-btn-cancel" onclick="rCancelPin()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Employee PIN Access Modal -->
+<div class="receipt-pin-overlay" id="receiptPinModal">
+  <div class="r-modal-box">
+    <h3>🔐 نظام الإيصالات</h3>
+    <p>هذا القسم يتطلب رقم سري للموظفين</p>
+    <input type="password" id="receiptPinInput" placeholder="أدخل الرقم السري" maxlength="20" onkeydown="if(event.key==='Enter')confirmReceiptPin()">
+    <div class="r-modal-error" id="receiptPinError"></div>
+    <div class="r-modal-btns">
+      <button class="r-modal-btn-ok" onclick="confirmReceiptPin()">دخول</button>
+      <button class="r-modal-btn-cancel" onclick="cancelReceiptPin()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt PDF Modal -->
+<div class="r-pdf-modal-overlay" id="rPdfModal">
+  <div class="r-pdf-modal-box">
+    <h3>📄 تصدير تقرير PDF</h3>
+    <div class="r-pdf-period-grid">
+      <div class="r-pdf-period-btn selected" onclick="rSelectPdfPeriod('today',this)">📅 اليوم</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('week',this)">📅 هذا الأسبوع</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('month',this)">📅 هذا الشهر</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('year',this)">📅 هذا العام</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('all',this)" style="grid-column:span 2">📋 كل السجلات</div>
+    </div>
+    <div class="r-pdf-modal-btns">
+      <button class="r-pdf-btn-ok" onclick="rDoExportPdf()">📄 تصدير</button>
+      <button class="r-pdf-btn-cancel" onclick="rClosePdfModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Shortcuts Panel -->
+<div class="r-shortcuts-panel" id="rShortcutsPanel">
+  <h3 style="color:#fff;font-size:14px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;">
+    ⌨️ اختصارات الإيصالات
+    <span onclick="toggleRShortcuts()" style="cursor:pointer;color:#e74c3c;font-size:18px">✕</span>
+  </h3>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">طباعة الإيصال</span><span class="r-shortcut-key">Ctrl+P</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">حفظ كصورة</span><span class="r-shortcut-key">Ctrl+S</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">تفريغ النموذج</span><span class="r-shortcut-key">Ctrl+R</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">تصدير PDF</span><span class="r-shortcut-key">Ctrl+D</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">إغلاق النوافذ</span><span class="r-shortcut-key">Esc</span></div>
+</div>
+
+</body></html>`);
   win.document.close();
   printSelection.clear();updatePrintSelUI();renderTable();
 };// ══════════════════════════════════════════════
@@ -1059,7 +1133,78 @@ window.viewPhotoFull = function(idx) {
   const win = window.open('','_blank');
   win.document.write(`<html><body style="margin:0;background:#000;display:flex;justify-content:center;align-items:center;min-height:100vh;">
     <img src="${p.base64}" style="max-width:100%;max-height:100vh;object-fit:contain;">
-    </body></html>`);
+    
+<!-- ══ RECEIPT SYSTEM OVERLAYS ══ -->
+
+<!-- Receipt Toast Container -->
+<div class="r-toast-container" id="rToastContainer"></div>
+
+<!-- Receipt Image Modal -->
+<div class="r-img-modal" id="rImgModal" onclick="rCloseImgModal()">
+  <button class="r-img-modal-close" onclick="rCloseImgModal()">✕</button>
+  <img id="rModalImg" src="" alt="إيصال" onclick="event.stopPropagation()">
+</div>
+
+<!-- Receipt PIN Modal (for log delete/clear) -->
+<div class="r-modal-overlay" id="rPinModal">
+  <div class="r-modal-box">
+    <h3 id="rPinTitle">🔐 تأكيد الهوية</h3>
+    <p id="rPinDesc">أدخل الرقم السري للمتابعة</p>
+    <input type="password" id="rPinInput" placeholder="••••••••" maxlength="20" onkeydown="if(event.key==='Enter')rConfirmPin()">
+    <div class="r-modal-error" id="rPinError"></div>
+    <div class="r-modal-btns">
+      <button class="r-modal-btn-ok" onclick="rConfirmPin()">تأكيد</button>
+      <button class="r-modal-btn-cancel" onclick="rCancelPin()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Employee PIN Access Modal -->
+<div class="receipt-pin-overlay" id="receiptPinModal">
+  <div class="r-modal-box">
+    <h3>🔐 نظام الإيصالات</h3>
+    <p>هذا القسم يتطلب رقم سري للموظفين</p>
+    <input type="password" id="receiptPinInput" placeholder="أدخل الرقم السري" maxlength="20" onkeydown="if(event.key==='Enter')confirmReceiptPin()">
+    <div class="r-modal-error" id="receiptPinError"></div>
+    <div class="r-modal-btns">
+      <button class="r-modal-btn-ok" onclick="confirmReceiptPin()">دخول</button>
+      <button class="r-modal-btn-cancel" onclick="cancelReceiptPin()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt PDF Modal -->
+<div class="r-pdf-modal-overlay" id="rPdfModal">
+  <div class="r-pdf-modal-box">
+    <h3>📄 تصدير تقرير PDF</h3>
+    <div class="r-pdf-period-grid">
+      <div class="r-pdf-period-btn selected" onclick="rSelectPdfPeriod('today',this)">📅 اليوم</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('week',this)">📅 هذا الأسبوع</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('month',this)">📅 هذا الشهر</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('year',this)">📅 هذا العام</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('all',this)" style="grid-column:span 2">📋 كل السجلات</div>
+    </div>
+    <div class="r-pdf-modal-btns">
+      <button class="r-pdf-btn-ok" onclick="rDoExportPdf()">📄 تصدير</button>
+      <button class="r-pdf-btn-cancel" onclick="rClosePdfModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Shortcuts Panel -->
+<div class="r-shortcuts-panel" id="rShortcutsPanel">
+  <h3 style="color:#fff;font-size:14px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;">
+    ⌨️ اختصارات الإيصالات
+    <span onclick="toggleRShortcuts()" style="cursor:pointer;color:#e74c3c;font-size:18px">✕</span>
+  </h3>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">طباعة الإيصال</span><span class="r-shortcut-key">Ctrl+P</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">حفظ كصورة</span><span class="r-shortcut-key">Ctrl+S</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">تفريغ النموذج</span><span class="r-shortcut-key">Ctrl+R</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">تصدير PDF</span><span class="r-shortcut-key">Ctrl+D</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">إغلاق النوافذ</span><span class="r-shortcut-key">Esc</span></div>
+</div>
+
+</body></html>`);
   win.document.close();
 };
 
@@ -1554,7 +1699,7 @@ window.showPage=function(id){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
   if(id !== 'pg-chat') chatPageOpen = false;
-  const pages=['pg-dash','pg-form','pg-import','pg-records','pg-late','pg-dup','pg-audit','pg-report','pg-backup'];
+  const pages=['pg-dash','pg-form','pg-import','pg-records','pg-late','pg-dup','pg-audit','pg-report','pg-backup','pg-receipts'];
   const i=pages.indexOf(id);if(i>=0)document.querySelectorAll('.nav-tab')[i]?.classList.add('active');
   const fn={'pg-dash':refreshAll,'pg-records':()=>renderTable(true),'pg-late':renderLate,
     'pg-dup':renderDups,'pg-audit':renderAudit,'pg-report':generateReport,'pg-backup':renderTeamPage,'pg-team':renderTeamPage,
@@ -2022,7 +2167,78 @@ window.printCardWindow=function(){
     }
   </style></head><body>
   <div class="print-first-page">${content}</div>
-  <script>window.onload=function(){setTimeout(function(){window.print();},500);}<\/script></body></html>`);
+  <script>window.onload=function(){setTimeout(function(){window.print();},500);}<\/script>
+<!-- ══ RECEIPT SYSTEM OVERLAYS ══ -->
+
+<!-- Receipt Toast Container -->
+<div class="r-toast-container" id="rToastContainer"></div>
+
+<!-- Receipt Image Modal -->
+<div class="r-img-modal" id="rImgModal" onclick="rCloseImgModal()">
+  <button class="r-img-modal-close" onclick="rCloseImgModal()">✕</button>
+  <img id="rModalImg" src="" alt="إيصال" onclick="event.stopPropagation()">
+</div>
+
+<!-- Receipt PIN Modal (for log delete/clear) -->
+<div class="r-modal-overlay" id="rPinModal">
+  <div class="r-modal-box">
+    <h3 id="rPinTitle">🔐 تأكيد الهوية</h3>
+    <p id="rPinDesc">أدخل الرقم السري للمتابعة</p>
+    <input type="password" id="rPinInput" placeholder="••••••••" maxlength="20" onkeydown="if(event.key==='Enter')rConfirmPin()">
+    <div class="r-modal-error" id="rPinError"></div>
+    <div class="r-modal-btns">
+      <button class="r-modal-btn-ok" onclick="rConfirmPin()">تأكيد</button>
+      <button class="r-modal-btn-cancel" onclick="rCancelPin()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Employee PIN Access Modal -->
+<div class="receipt-pin-overlay" id="receiptPinModal">
+  <div class="r-modal-box">
+    <h3>🔐 نظام الإيصالات</h3>
+    <p>هذا القسم يتطلب رقم سري للموظفين</p>
+    <input type="password" id="receiptPinInput" placeholder="أدخل الرقم السري" maxlength="20" onkeydown="if(event.key==='Enter')confirmReceiptPin()">
+    <div class="r-modal-error" id="receiptPinError"></div>
+    <div class="r-modal-btns">
+      <button class="r-modal-btn-ok" onclick="confirmReceiptPin()">دخول</button>
+      <button class="r-modal-btn-cancel" onclick="cancelReceiptPin()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt PDF Modal -->
+<div class="r-pdf-modal-overlay" id="rPdfModal">
+  <div class="r-pdf-modal-box">
+    <h3>📄 تصدير تقرير PDF</h3>
+    <div class="r-pdf-period-grid">
+      <div class="r-pdf-period-btn selected" onclick="rSelectPdfPeriod('today',this)">📅 اليوم</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('week',this)">📅 هذا الأسبوع</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('month',this)">📅 هذا الشهر</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('year',this)">📅 هذا العام</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('all',this)" style="grid-column:span 2">📋 كل السجلات</div>
+    </div>
+    <div class="r-pdf-modal-btns">
+      <button class="r-pdf-btn-ok" onclick="rDoExportPdf()">📄 تصدير</button>
+      <button class="r-pdf-btn-cancel" onclick="rClosePdfModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Shortcuts Panel -->
+<div class="r-shortcuts-panel" id="rShortcutsPanel">
+  <h3 style="color:#fff;font-size:14px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;">
+    ⌨️ اختصارات الإيصالات
+    <span onclick="toggleRShortcuts()" style="cursor:pointer;color:#e74c3c;font-size:18px">✕</span>
+  </h3>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">طباعة الإيصال</span><span class="r-shortcut-key">Ctrl+P</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">حفظ كصورة</span><span class="r-shortcut-key">Ctrl+S</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">تفريغ النموذج</span><span class="r-shortcut-key">Ctrl+R</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">تصدير PDF</span><span class="r-shortcut-key">Ctrl+D</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">إغلاق النوافذ</span><span class="r-shortcut-key">Esc</span></div>
+</div>
+
+</body></html>`);
   win.document.close();
 };
 
@@ -2063,6 +2279,53 @@ window.addEventListener('scroll',()=>{
 });
 
 // Backup
+
+
+/* ══ RECEIPT ACCESS CONTROL ══ */
+const RECEIPT_EMPLOYEE_PIN = '040487';
+let receiptUnlocked = false;
+
+window.checkReceiptAccess = function(){
+  if(typeof userRole === 'undefined') return false;
+  if(userRole === 'admin' || userRole === 'supervisor') return true;
+  if(userRole === 'employee'){
+    if(receiptUnlocked) return true;
+    // Show PIN modal
+    const modal = document.getElementById('receiptPinModal');
+    if(modal){ modal.classList.add('open'); document.getElementById('receiptPinInput').value=''; document.getElementById('receiptPinError').textContent=''; setTimeout(()=>document.getElementById('receiptPinInput').focus(),100); }
+    return false;
+  }
+  if(typeof showTqToast === 'function') showTqToast('❌ ليس لديك صلاحية');
+  else if(typeof showToast === 'function') showToast('❌ ليس لديك صلاحية');
+  return false;
+};
+
+window.confirmReceiptPin = function(){
+  const val = document.getElementById('receiptPinInput').value;
+  if(val === RECEIPT_EMPLOYEE_PIN){
+    receiptUnlocked = true;
+    document.getElementById('receiptPinModal').classList.remove('open');
+    showPage('pg-receipts');
+    if(window.initReceiptSystem) initReceiptSystem();
+    showToast('✅ تم الدخول لنظام الإيصالات');
+  } else {
+    document.getElementById('receiptPinError').textContent = '❌ الرقم السري غير صحيح';
+    document.getElementById('receiptPinInput').value = '';
+    document.getElementById('receiptPinInput').focus();
+  }
+};
+
+window.cancelReceiptPin = function(){
+  document.getElementById('receiptPinModal').classList.remove('open');
+  showPage('pg-dash');
+};
+
+/* ══ RECEIPT TAB HANDLER ══ */
+window.handleReceiptTabClick = function(){
+  if(typeof checkReceiptAccess === 'function' && !checkReceiptAccess()) return;
+  showPage('pg-receipts');
+  if(window.initReceiptSystem) initReceiptSystem();
+};
 window.exportBackupJson=function(){
   if(!can.export())return;
   const data={records,exportDate:NOW(),version:3,exportedBy:currentUser?.email};
@@ -2441,7 +2704,78 @@ window.printTableNow=function(){
     +'<p>تاريخ الطباعة: '+new Date().toLocaleDateString('ar-EG')
     +' — إجمالي: '+document.getElementById('countBadge').textContent+'</p>'
     +table.outerHTML.replace(/<th[^>]*>طباعة<\/th>/g,'').replace(/<th[^>]*>تعديل<\/th>/g,'').replace(/<th[^>]*>حذف<\/th>/g,'')
-    +'</body></html>');
+    +'
+<!-- ══ RECEIPT SYSTEM OVERLAYS ══ -->
+
+<!-- Receipt Toast Container -->
+<div class="r-toast-container" id="rToastContainer"></div>
+
+<!-- Receipt Image Modal -->
+<div class="r-img-modal" id="rImgModal" onclick="rCloseImgModal()">
+  <button class="r-img-modal-close" onclick="rCloseImgModal()">✕</button>
+  <img id="rModalImg" src="" alt="إيصال" onclick="event.stopPropagation()">
+</div>
+
+<!-- Receipt PIN Modal (for log delete/clear) -->
+<div class="r-modal-overlay" id="rPinModal">
+  <div class="r-modal-box">
+    <h3 id="rPinTitle">🔐 تأكيد الهوية</h3>
+    <p id="rPinDesc">أدخل الرقم السري للمتابعة</p>
+    <input type="password" id="rPinInput" placeholder="••••••••" maxlength="20" onkeydown="if(event.key==='Enter')rConfirmPin()">
+    <div class="r-modal-error" id="rPinError"></div>
+    <div class="r-modal-btns">
+      <button class="r-modal-btn-ok" onclick="rConfirmPin()">تأكيد</button>
+      <button class="r-modal-btn-cancel" onclick="rCancelPin()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Employee PIN Access Modal -->
+<div class="receipt-pin-overlay" id="receiptPinModal">
+  <div class="r-modal-box">
+    <h3>🔐 نظام الإيصالات</h3>
+    <p>هذا القسم يتطلب رقم سري للموظفين</p>
+    <input type="password" id="receiptPinInput" placeholder="أدخل الرقم السري" maxlength="20" onkeydown="if(event.key==='Enter')confirmReceiptPin()">
+    <div class="r-modal-error" id="receiptPinError"></div>
+    <div class="r-modal-btns">
+      <button class="r-modal-btn-ok" onclick="confirmReceiptPin()">دخول</button>
+      <button class="r-modal-btn-cancel" onclick="cancelReceiptPin()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt PDF Modal -->
+<div class="r-pdf-modal-overlay" id="rPdfModal">
+  <div class="r-pdf-modal-box">
+    <h3>📄 تصدير تقرير PDF</h3>
+    <div class="r-pdf-period-grid">
+      <div class="r-pdf-period-btn selected" onclick="rSelectPdfPeriod('today',this)">📅 اليوم</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('week',this)">📅 هذا الأسبوع</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('month',this)">📅 هذا الشهر</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('year',this)">📅 هذا العام</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('all',this)" style="grid-column:span 2">📋 كل السجلات</div>
+    </div>
+    <div class="r-pdf-modal-btns">
+      <button class="r-pdf-btn-ok" onclick="rDoExportPdf()">📄 تصدير</button>
+      <button class="r-pdf-btn-cancel" onclick="rClosePdfModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Shortcuts Panel -->
+<div class="r-shortcuts-panel" id="rShortcutsPanel">
+  <h3 style="color:#fff;font-size:14px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;">
+    ⌨️ اختصارات الإيصالات
+    <span onclick="toggleRShortcuts()" style="cursor:pointer;color:#e74c3c;font-size:18px">✕</span>
+  </h3>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">طباعة الإيصال</span><span class="r-shortcut-key">Ctrl+P</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">حفظ كصورة</span><span class="r-shortcut-key">Ctrl+S</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">تفريغ النموذج</span><span class="r-shortcut-key">Ctrl+R</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">تصدير PDF</span><span class="r-shortcut-key">Ctrl+D</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">إغلاق النوافذ</span><span class="r-shortcut-key">Esc</span></div>
+</div>
+
+</body></html>');
   win.document.close();
   setTimeout(function(){win.print();},500);
 };
@@ -2934,7 +3268,78 @@ window.exportReportPDF=function(){
     +'</div>'
     +lateSection
     +'<div class="footer">نظام إدارة طلبات التقنين — '+dateStr+'</div>'
-    +'</div></body></html>');
+    +'</div>
+<!-- ══ RECEIPT SYSTEM OVERLAYS ══ -->
+
+<!-- Receipt Toast Container -->
+<div class="r-toast-container" id="rToastContainer"></div>
+
+<!-- Receipt Image Modal -->
+<div class="r-img-modal" id="rImgModal" onclick="rCloseImgModal()">
+  <button class="r-img-modal-close" onclick="rCloseImgModal()">✕</button>
+  <img id="rModalImg" src="" alt="إيصال" onclick="event.stopPropagation()">
+</div>
+
+<!-- Receipt PIN Modal (for log delete/clear) -->
+<div class="r-modal-overlay" id="rPinModal">
+  <div class="r-modal-box">
+    <h3 id="rPinTitle">🔐 تأكيد الهوية</h3>
+    <p id="rPinDesc">أدخل الرقم السري للمتابعة</p>
+    <input type="password" id="rPinInput" placeholder="••••••••" maxlength="20" onkeydown="if(event.key==='Enter')rConfirmPin()">
+    <div class="r-modal-error" id="rPinError"></div>
+    <div class="r-modal-btns">
+      <button class="r-modal-btn-ok" onclick="rConfirmPin()">تأكيد</button>
+      <button class="r-modal-btn-cancel" onclick="rCancelPin()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Employee PIN Access Modal -->
+<div class="receipt-pin-overlay" id="receiptPinModal">
+  <div class="r-modal-box">
+    <h3>🔐 نظام الإيصالات</h3>
+    <p>هذا القسم يتطلب رقم سري للموظفين</p>
+    <input type="password" id="receiptPinInput" placeholder="أدخل الرقم السري" maxlength="20" onkeydown="if(event.key==='Enter')confirmReceiptPin()">
+    <div class="r-modal-error" id="receiptPinError"></div>
+    <div class="r-modal-btns">
+      <button class="r-modal-btn-ok" onclick="confirmReceiptPin()">دخول</button>
+      <button class="r-modal-btn-cancel" onclick="cancelReceiptPin()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt PDF Modal -->
+<div class="r-pdf-modal-overlay" id="rPdfModal">
+  <div class="r-pdf-modal-box">
+    <h3>📄 تصدير تقرير PDF</h3>
+    <div class="r-pdf-period-grid">
+      <div class="r-pdf-period-btn selected" onclick="rSelectPdfPeriod('today',this)">📅 اليوم</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('week',this)">📅 هذا الأسبوع</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('month',this)">📅 هذا الشهر</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('year',this)">📅 هذا العام</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('all',this)" style="grid-column:span 2">📋 كل السجلات</div>
+    </div>
+    <div class="r-pdf-modal-btns">
+      <button class="r-pdf-btn-ok" onclick="rDoExportPdf()">📄 تصدير</button>
+      <button class="r-pdf-btn-cancel" onclick="rClosePdfModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Shortcuts Panel -->
+<div class="r-shortcuts-panel" id="rShortcutsPanel">
+  <h3 style="color:#fff;font-size:14px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;">
+    ⌨️ اختصارات الإيصالات
+    <span onclick="toggleRShortcuts()" style="cursor:pointer;color:#e74c3c;font-size:18px">✕</span>
+  </h3>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">طباعة الإيصال</span><span class="r-shortcut-key">Ctrl+P</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">حفظ كصورة</span><span class="r-shortcut-key">Ctrl+S</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">تفريغ النموذج</span><span class="r-shortcut-key">Ctrl+R</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">تصدير PDF</span><span class="r-shortcut-key">Ctrl+D</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">إغلاق النوافذ</span><span class="r-shortcut-key">Esc</span></div>
+</div>
+
+</body></html>');
   win.document.close();
   setTimeout(function(){win.print();},500);
   logAudit('export','تقرير PDF');
@@ -3037,6 +3442,7 @@ window.exportReportPDF=function(){
     <button class="nav-tab"        data-page="pg-report"  onclick="showPage('pg-report')">📄 التقارير</button>
     <button class="nav-tab"        data-page="pg-team"    onclick="showPage('pg-team')">👥 الفريق <span id="new-visitors-badge" style="display:none;background:#e53935;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;margin-right:4px;animation:pulse-badge 1s infinite;">0</span></button>
     <button class="nav-tab"        data-page="pg-chat"    onclick="showPage('pg-chat')">💬 الشات <span id="chat-badge" style="display:none;background:#e53935;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;margin-right:4px;animation:pulse-badge 1s infinite;">0</span></button>
+    <button class="nav-tab" id="nav-receipts-btn" data-page="pg-receipts" onclick="handleReceiptTabClick()" style="display:none">💳 الإيصالات</button>
   </div>
 </div>
 
@@ -3244,6 +3650,230 @@ body.dark #actions-menu button:hover{background:#263238!important;}
 .pdf-stat-box .num{font-size:26px;font-weight:900;color:var(--navy);}
 .pdf-stat-box .lbl{font-size:11px;color:var(--muted);margin-top:2px;}
 @media(max-width:600px){.pdf-stat-grid{grid-template-columns:1fr 1fr;}}
+
+/* ══ RECEIPT MODULE ══ */
+
+/* ══════════════════════════════════
+   نظام الإيصالات — CSS Module
+══════════════════════════════════ */
+/* Receipt page container */
+#pg-receipts { font-family: 'Tajawal', sans-serif; }
+
+/* Receipt tabs bar */
+.r-tabs-bar { display:flex; background:#111e28; border-bottom:2px solid #0e5f78; padding:0 14px; gap:2px; flex-shrink:0; align-items:center; overflow-x:auto; scrollbar-width:none; }
+.r-tabs-bar::-webkit-scrollbar { display:none; }
+.r-tab-btn { padding:11px 18px; border:none; background:transparent; color:#7fa3be; font-family:'Tajawal',sans-serif; font-size:13px; font-weight:700; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; transition:all 0.18s; white-space:nowrap; }
+.r-tab-btn.active { color:#fff; border-bottom-color:#0e5f78; }
+.r-tab-btn:hover:not(.active) { color:#c8dae6; }
+.r-tab-content { display:none; }
+.r-tab-content.active { display:block; }
+
+/* Receipt stats bar */
+.r-stats-bar { background:#0a1a26; border-bottom:1px solid rgba(14,95,120,0.4); padding:5px 14px; display:flex; align-items:center; gap:12px; font-size:11px; color:#7fa3be; overflow-x:auto; scrollbar-width:none; }
+.r-stats-bar .sb-item { display:flex; align-items:center; gap:4px; white-space:nowrap; }
+.r-stats-bar .sb-val { color:#2ecc71; font-weight:800; font-family:'Roboto',sans-serif; }
+.r-stats-bar .sb-time { margin-right:auto; color:#4a7a96; font-family:'Roboto',sans-serif; font-size:11px; white-space:nowrap; }
+
+/* Receipt form panel */
+.r-form-panel { width:370px; min-width:370px; background:#1c2b3a; padding:22px 18px; overflow-y:auto; display:flex; flex-direction:column; min-height:calc(100vh - 200px); }
+.r-section-title { color:#5ba8d4; font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; margin:14px 0 7px; padding-bottom:4px; border-bottom:1px solid rgba(91,168,212,0.2); }
+.r-form-group { margin-bottom:10px; }
+.r-form-group label { display:block; color:#7fa3be; font-size:11px; font-weight:600; margin-bottom:4px; }
+.r-form-group input, .r-form-group select { width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:9px 11px; color:#fff; font-family:'Tajawal',sans-serif; font-size:14px; outline:none; transition:border-color 0.2s; direction:ltr; text-align:right; }
+.r-form-group input:focus, .r-form-group select:focus { border-color:#5ba8d4; background:rgba(91,168,212,0.07); }
+.r-form-group input::placeholder { color:rgba(255,255,255,0.2); }
+.r-form-group select option { background:#1c2b3a; color:#fff; }
+.r-fee-wrap { display:flex; gap:7px; }
+.r-fee-wrap input { flex:1; }
+.r-fee-badge { background:rgba(91,168,212,0.15); border:1px solid rgba(91,168,212,0.3); border-radius:7px; padding:9px 8px; color:#5ba8d4; font-size:11px; font-weight:700; white-space:nowrap; display:flex; align-items:center; }
+.r-form-hint { color:#4a7a96; font-size:10px; margin-top:3px; }
+.r-payfor-select { width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:9px 11px; color:#fff; font-family:'Tajawal',sans-serif; font-size:14px; outline:none; cursor:pointer; direction:ltr; text-align:right; margin-bottom:5px; }
+.r-payfor-select option { background:#1c2b3a; color:#fff; }
+.r-payfor-edit-row { display:flex; gap:5px; align-items:center; }
+.r-payfor-edit-row input { flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:7px; padding:8px 10px; color:#fff; font-family:'Tajawal',sans-serif; font-size:13px; outline:none; direction:ltr; text-align:right; }
+.r-payfor-edit-row input:focus { border-color:#5ba8d4; }
+.r-btn-add-template { background:rgba(91,168,212,0.15); border:1px solid rgba(91,168,212,0.3); color:#5ba8d4; border-radius:6px; padding:8px 9px; font-size:11px; font-family:'Tajawal',sans-serif; cursor:pointer; white-space:nowrap; font-weight:700; }
+.r-btn-del-template { background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.2); color:#e74c3c; border-radius:6px; padding:8px; font-size:12px; cursor:pointer; }
+.r-btn-group { display:flex; flex-direction:column; gap:7px; margin-top:auto; padding-top:16px; }
+.r-btn { width:100%; padding:12px; border:none; border-radius:9px; font-family:'Tajawal',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.18s; display:flex; align-items:center; justify-content:center; gap:7px; }
+.r-btn-print { background:#0e5f78; color:#fff; }
+.r-btn-print:hover { background:#0a4d62; }
+.r-btn-save-img { background:rgba(255,255,255,0.07); color:#c8dae6; border:1px solid rgba(255,255,255,0.12); }
+.r-btn-save-img:hover { background:rgba(255,255,255,0.14); }
+.r-btn-backup { background:rgba(39,174,96,0.15); color:#2ecc71; border:1px solid rgba(39,174,96,0.3); font-size:13px; }
+.r-btn-reset { background:rgba(231,76,60,0.12); color:#e74c3c; border:1px solid rgba(231,76,60,0.25); font-size:12px; padding:9px; }
+.r-backup-status { font-size:10px; color:#4a7a96; text-align:center; margin-top:3px; min-height:13px; }
+
+/* Receipt preview */
+.r-preview-panel { flex:1; display:flex; flex-direction:column; align-items:center; padding:24px 16px; overflow-y:auto; background:#e9eef3; }
+.r-preview-label { font-size:11px; color:#8fa8bc; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:14px; }
+
+/* The Receipt itself */
+#r-receipt { width:min(500px,100%); background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 4px 28px rgba(0,0,0,0.11); font-family:'Tajawal',sans-serif; direction:rtl; }
+.rr-header { background:#fff; margin:18px 18px 0; border-radius:12px; border:1.5px solid #dde6ec; padding:18px 24px; display:flex; justify-content:space-between; align-items:center; }
+.rr-header-label { color:#1a252f; font-size:25px; font-weight:600; }
+.rr-header-value { color:#111c23; font-size:30px; font-weight:900; }
+.rr-body { background:#fff; padding:14px 18px 6px; }
+.rr-card { background:#fff; border-radius:12px; border:1.5px solid #dde6ec; padding:18px 24px 16px; }
+.rr-card-title { text-align:center; color:#111c23; font-size:21px; font-weight:700; margin-bottom:8px; }
+.rr-card-bignum { text-align:center; color:#111c23; font-size:27px; font-weight:900; letter-spacing:0.5px; margin-bottom:14px; direction:ltr; font-family:'Roboto',sans-serif; }
+.rr-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; }
+.rr-row-label { color:#0e5f78; font-size:20px; font-weight:700; }
+.rr-row-val { color:#0e5f78; font-size:20px; font-weight:700; direction:ltr; text-align:left; font-family:'Roboto',sans-serif; }
+.rr-payfor { margin-top:14px; padding-top:14px; border-top:1.5px solid #dde6ec; text-align:center; color:#111c23; font-size:20px; font-weight:600; line-height:1.7; }
+.rr-payfor-line2 { display:block; font-size:20px; font-weight:800; color:#111c23; direction:ltr; text-align:center; }
+.rr-divider { height:1.5px; background:#dde6ec; }
+.rr-details { padding:4px 42px 0; }
+.rr-detail-row { display:flex; justify-content:space-between; align-items:center; padding:13px 0; border-bottom:1.5px solid #edf2f6; }
+.rr-detail-row:last-child { border-bottom:none; }
+.rr-detail-label { color:#0e5f78; font-size:20px; font-weight:700; }
+.rr-detail-val { color:#0e5f78; font-size:20px; font-weight:700; direction:ltr; font-family:'Roboto',sans-serif; }
+.rr-total { padding:16px 42px 22px; border-top:1.5px solid #dde6ec; display:flex; justify-content:space-between; align-items:center; }
+.rr-total-label { color:#083d50; font-size:21px; font-weight:900; }
+.rr-total-val { color:#083d50; font-size:21px; font-weight:900; direction:ltr; font-family:'Roboto',sans-serif; }
+
+/* Receipt Log */
+.r-log-wrap { flex:1; padding:16px; overflow-y:auto; background:#e9eef3; width:100%; }
+.r-log-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:8px; }
+.r-stat-box { background:#fff; border-radius:10px; padding:9px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.07); text-align:center; min-width:110px; }
+.r-stat-box .sv { color:#083d50; font-size:15px; font-weight:900; font-family:'Roboto',sans-serif; }
+.r-stat-box .sl { color:#7fa3be; font-size:10px; font-weight:700; margin-top:2px; }
+.r-filter-bar { background:#fff; border-radius:10px; padding:11px 14px; margin-bottom:10px; display:flex; gap:9px; flex-wrap:wrap; align-items:center; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.r-filter-bar input, .r-filter-bar select { background:#f4f8fb; border:1px solid #dde6ec; border-radius:7px; padding:7px 11px; font-family:'Tajawal',sans-serif; font-size:13px; color:#1c2b3a; outline:none; }
+.r-log-table-wrap { overflow-x:auto; background:#fff; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.07); }
+.r-log-table { width:100%; border-collapse:collapse; font-family:'Tajawal',sans-serif; direction:rtl; min-width:900px; }
+.r-log-table th { background:#0e5f78; color:#fff; font-size:11px; font-weight:700; padding:10px 11px; text-align:right; white-space:nowrap; }
+.r-log-table td { padding:8px 11px; font-size:12px; color:#1c2b3a; border-bottom:1px solid #edf2f6; vertical-align:middle; }
+.r-log-table tr:last-child td { border-bottom:none; }
+.r-log-table tr:hover td { background:#f4f8fb; }
+.r-log-num { font-family:'Roboto',sans-serif; font-weight:700; }
+.r-log-profit { color:#0e5f78; font-weight:800; font-family:'Roboto',sans-serif; }
+.r-log-img-thumb { width:48px; height:33px; object-fit:cover; border-radius:4px; border:1px solid #dde6ec; cursor:pointer; transition:transform 0.15s; display:block; margin-bottom:2px; }
+.r-log-img-thumb:hover { transform:scale(1.1); }
+.r-log-empty { text-align:center; color:#8fa8bc; padding:44px; font-size:14px; }
+.r-badge-method { display:inline-block; background:#e8f4f8; color:#0e5f78; border-radius:6px; padding:2px 7px; font-size:11px; font-weight:700; }
+.r-btn-del-row { background:rgba(231,76,60,0.1); color:#e74c3c; border:1px solid rgba(231,76,60,0.25); border-radius:6px; padding:4px 8px; font-size:11px; font-family:'Tajawal',sans-serif; cursor:pointer; font-weight:700; }
+.r-action-btn { padding:7px 12px; border:none; border-radius:8px; font-family:'Tajawal',sans-serif; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px; white-space:nowrap; }
+
+/* Receipt Summary */
+.r-summary-wrap { flex:1; padding:16px; overflow-y:auto; background:#e9eef3; width:100%; }
+.r-period-btn { padding:7px 18px; border:2px solid #dde6ec; background:#fff; border-radius:20px; font-family:'Tajawal',sans-serif; font-size:12px; font-weight:700; cursor:pointer; color:#4a7a96; transition:all 0.18s; }
+.r-period-btn.active { background:#0e5f78; color:#fff; border-color:#0e5f78; }
+.r-sum-card { background:#fff; border-radius:12px; padding:14px 16px; box-shadow:0 2px 10px rgba(0,0,0,0.07); border-right:4px solid #0e5f78; }
+.r-sum-card .sc-val { font-family:'Roboto',sans-serif; font-size:19px; font-weight:900; color:#083d50; margin-bottom:3px; }
+.r-sum-card .sc-lbl { font-size:11px; color:#7fa3be; font-weight:600; }
+.r-chart-section { background:#fff; border-radius:12px; padding:16px; box-shadow:0 2px 10px rgba(0,0,0,0.07); margin-bottom:14px; }
+.r-bar-chart { display:flex; align-items:flex-end; gap:5px; height:120px; padding:0 2px; }
+.r-bar-wrap { display:flex; flex-direction:column; align-items:center; flex:1; gap:3px; }
+.r-bar { width:100%; background:linear-gradient(to top,#0e5f78,#2a9db8); border-radius:4px 4px 0 0; min-height:3px; transition:height 0.4s; }
+.r-bar-label { font-size:10px; color:#7fa3be; font-weight:600; white-space:nowrap; }
+.r-bar-val { font-size:9px; color:#083d50; font-weight:700; font-family:'Roboto',sans-serif; }
+.r-method-card { background:#f4f8fb; border-radius:10px; padding:11px 12px; border:1px solid #dde6ec; }
+.r-method-card .mv { font-family:'Roboto',sans-serif; font-size:15px; font-weight:900; color:#083d50; }
+.r-method-card .ml { font-size:10px; color:#7fa3be; font-weight:600; margin-top:2px; }
+.r-method-card .mc { font-size:10px; color:#0e5f78; font-weight:700; }
+
+/* Receipt Settings */
+.r-settings-wrap { flex:1; padding:16px; overflow-y:auto; background:#e9eef3; width:100%; }
+.r-settings-card { background:#fff; border-radius:14px; padding:20px; box-shadow:0 2px 12px rgba(0,0,0,0.07); margin-bottom:14px; max-width:500px; }
+.r-settings-card h3 { color:#0e5f78; font-size:13px; font-weight:700; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #edf2f6; display:flex; align-items:center; gap:6px; }
+.r-s-form-group { margin-bottom:11px; }
+.r-s-form-group label { display:block; color:#4a7a96; font-size:11px; font-weight:600; margin-bottom:4px; }
+.r-s-form-group input, .r-s-form-group select { width:100%; border:1.5px solid #dde6ec; border-radius:8px; padding:9px 12px; font-family:'Tajawal',sans-serif; font-size:13px; color:#1c2b3a; outline:none; background:#fff; }
+.r-s-form-group input:focus, .r-s-form-group select:focus { border-color:#0e5f78; }
+.r-btn-save-settings { background:#0e5f78; color:#fff; border:none; border-radius:8px; padding:9px 20px; font-family:'Tajawal',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
+.r-settings-success { color:#27ae60; font-size:12px; font-weight:600; margin-top:6px; display:none; }
+.r-backup-folder-info { background:#e8f4fb; border-radius:8px; padding:9px 12px; font-size:11px; color:#0e5f78; font-weight:600; margin-top:9px; word-break:break-all; display:none; }
+
+/* Receipt Toast */
+.r-toast-container { position:fixed; bottom:80px; left:50%; transform:translateX(-50%); z-index:99998; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none; }
+.r-toast { background:#1c2b3a; color:#fff; padding:12px 20px; border-radius:12px; font-family:'Tajawal',sans-serif; font-size:13px; font-weight:600; box-shadow:0 4px 20px rgba(0,0,0,0.3); display:flex; align-items:center; gap:9px; min-width:240px; max-width:90vw; justify-content:center; opacity:0; transform:translateY(16px); transition:all 0.3s cubic-bezier(.34,1.56,.64,1); pointer-events:none; }
+.r-toast.show { opacity:1; transform:translateY(0); }
+.r-toast.success { border-right:4px solid #2ecc71; }
+.r-toast.error { border-right:4px solid #e74c3c; }
+.r-toast.info { border-right:4px solid #0e5f78; }
+.r-toast.warning { border-right:4px solid #f39c12; }
+
+/* PIN Modals */
+.r-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:8100; align-items:center; justify-content:center; padding:16px; }
+.r-modal-overlay.open { display:flex; }
+.r-modal-box { background:#1c2b3a; border-radius:16px; padding:28px; width:100%; max-width:320px; text-align:center; box-shadow:0 8px 40px rgba(0,0,0,0.4); }
+.r-modal-box h3 { color:#fff; font-size:16px; font-weight:700; margin-bottom:7px; }
+.r-modal-box p { color:#7fa3be; font-size:12px; margin-bottom:16px; }
+.r-modal-box input { width:100%; background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.15); border-radius:8px; padding:12px; color:#fff; font-family:'Roboto',sans-serif; font-size:20px; letter-spacing:8px; text-align:center; outline:none; margin-bottom:13px; }
+.r-modal-box input:focus { border-color:#0e5f78; }
+.r-modal-btns { display:flex; gap:9px; }
+.r-modal-btn-ok { flex:1; background:#0e5f78; color:#fff; border:none; border-radius:8px; padding:11px; font-family:'Tajawal',sans-serif; font-size:14px; font-weight:700; cursor:pointer; }
+.r-modal-btn-cancel { flex:1; background:rgba(255,255,255,0.07); color:#c8dae6; border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:11px; font-family:'Tajawal',sans-serif; font-size:14px; font-weight:700; cursor:pointer; }
+.r-modal-error { color:#e74c3c; font-size:12px; margin-top:-7px; margin-bottom:10px; min-height:14px; }
+
+/* Image Modal for receipts */
+.r-img-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.78); z-index:7100; align-items:center; justify-content:center; padding:16px; }
+.r-img-modal.open { display:flex; }
+.r-img-modal img { max-width:90vw; max-height:85vh; border-radius:12px; }
+.r-img-modal-close { position:absolute; top:16px; left:16px; background:#fff; border:none; border-radius:50%; width:36px; height:36px; font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-weight:700; }
+
+/* PDF Modal */
+.r-pdf-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:8600; align-items:center; justify-content:center; padding:16px; }
+.r-pdf-modal-overlay.open { display:flex; }
+.r-pdf-modal-box { background:#1c2b3a; border-radius:16px; padding:26px; width:100%; max-width:340px; box-shadow:0 8px 40px rgba(0,0,0,0.4); }
+.r-pdf-modal-box h3 { color:#fff; font-size:15px; font-weight:700; margin-bottom:16px; }
+.r-pdf-period-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px; }
+.r-pdf-period-btn { padding:10px; border:1.5px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); border-radius:9px; color:#c8dae6; font-family:'Tajawal',sans-serif; font-size:12px; font-weight:700; cursor:pointer; text-align:center; transition:all 0.18s; }
+.r-pdf-period-btn:hover, .r-pdf-period-btn.selected { background:rgba(14,95,120,0.3); border-color:#0e5f78; color:#fff; }
+.r-pdf-modal-btns { display:flex; gap:8px; }
+.r-pdf-btn-ok { flex:1; background:#0e5f78; color:#fff; border:none; border-radius:8px; padding:11px; font-family:'Tajawal',sans-serif; font-size:14px; font-weight:700; cursor:pointer; }
+.r-pdf-btn-cancel { flex:1; background:rgba(255,255,255,0.07); color:#c8dae6; border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:11px; font-family:'Tajawal',sans-serif; font-size:14px; font-weight:700; cursor:pointer; }
+
+/* Shortcuts panel */
+.r-shortcuts-panel { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#1c2b3a; border-radius:14px; padding:22px 26px; z-index:6100; box-shadow:0 8px 40px rgba(0,0,0,0.5); width:min(320px,90vw); }
+.r-shortcuts-panel.open { display:block; }
+.r-shortcut-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+.r-shortcut-row:last-child { border-bottom:none; }
+.r-shortcut-key { background:rgba(14,95,120,0.3); border:1px solid rgba(14,95,120,0.5); color:#5ba8d4; border-radius:5px; padding:2px 8px; font-family:'Roboto',sans-serif; font-size:11px; font-weight:700; }
+.r-shortcut-desc { color:#7fa3be; font-size:12px; }
+
+/* Receipt Lock screen */
+.r-lock-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:400px; background:#e9eef3; padding:40px; text-align:center; }
+.r-lock-icon { font-size:64px; margin-bottom:16px; }
+.r-lock-title { color:#1c2b3a; font-size:20px; font-weight:800; margin-bottom:8px; font-family:'Tajawal',sans-serif; }
+.r-lock-desc { color:#6a8fa8; font-size:14px; margin-bottom:24px; line-height:1.8; font-family:'Tajawal',sans-serif; }
+.r-lock-btn { background:#0e5f78; color:#fff; border:none; border-radius:12px; padding:14px 32px; font-family:'Tajawal',sans-serif; font-size:15px; font-weight:700; cursor:pointer; }
+.r-lock-btn:hover { background:#0a4d62; }
+
+/* Receipt PIN access modal */
+.receipt-pin-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9000; align-items:center; justify-content:center; padding:16px; }
+.receipt-pin-overlay.open { display:flex; }
+
+/* Main layout for receipt page */
+.r-main-wrap { display:flex; min-height:calc(100vh - 200px); }
+
+/* Dark mode for receipt */
+body.dark #pg-receipts .r-preview-panel,
+body.dark #pg-receipts .r-log-wrap,
+body.dark #pg-receipts .r-summary-wrap,
+body.dark #pg-receipts .r-settings-wrap { background:#0D1B2A; }
+body.dark #pg-receipts .r-stat-box,
+body.dark #pg-receipts .r-filter-bar,
+body.dark #pg-receipts .r-log-table-wrap,
+body.dark #pg-receipts .r-settings-card,
+body.dark #pg-receipts .r-chart-section,
+body.dark #pg-receipts .r-sum-card { background:#1E272E; border-color:#37474F; }
+body.dark #pg-receipts .r-log-table td { color:#E0E0E0; }
+body.dark #pg-receipts #r-receipt { background:#fff; }
+
+@media(max-width:768px) {
+  .r-main-wrap { flex-direction:column; }
+  .r-form-panel { width:100%; min-width:0; }
+  .r-preview-panel { padding:16px 10px; }
+  #r-receipt { width:100%; }
+  .rr-header-label { font-size:18px; }
+  .rr-header-value { font-size:22px; }
+  .rr-detail-label, .rr-detail-val { font-size:16px; }
+  .rr-details { padding:4px 22px 0; }
+  .rr-total { padding:12px 22px 18px; }
+}
+
 </style>
 
 <!-- ══ PAGE: DASHBOARD ══ -->
@@ -3541,6 +4171,303 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   </div>
 </div>
 
+
+<!-- ══════════════════════════════════════════════
+     💳 صفحة نظام الإيصالات
+══════════════════════════════════════════════ -->
+<div id="pg-receipts" class="page">
+
+  <!-- Receipt Tabs Bar -->
+  <div class="r-tabs-bar" id="rTabsBar">
+    <button class="r-tab-btn active" onclick="switchRTab('r-tab-receipt',this)">🧾 إيصال جديد</button>
+    <button class="r-tab-btn" onclick="switchRTab('r-tab-log',this)">📋 السجل <span id="rLogBadge" style="background:#0e5f78;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-right:3px;display:none">0</span></button>
+    <button class="r-tab-btn" onclick="switchRTab('r-tab-summary',this)">📊 الملخصات</button>
+    <button class="r-tab-btn" onclick="switchRTab('r-tab-settings',this)">⚙️ الإعدادات</button>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="r-stats-bar" id="rStatsBar">
+    <div class="sb-item">📋 <span>اليوم:</span><span class="sb-val" id="rsb_today_count">0</span><span>إيصال</span></div>
+    <span style="color:#1c3a50">|</span>
+    <div class="sb-item">💰 <span>المبالغ:</span><span class="sb-val" id="rsb_today_total">EGP 0.00</span></div>
+    <span style="color:#1c3a50">|</span>
+    <div class="sb-item">📈 <span>الدخل:</span><span class="sb-val" id="rsb_today_profit">EGP 0.00</span></div>
+    <span class="sb-time" id="rsb_time"></span>
+    <span style="color:#4a7a96;font-size:11px;cursor:pointer;border:1px solid #1c3a50;border-radius:4px;padding:1px 6px;flex-shrink:0;" onclick="toggleRShortcuts()">⌨️ Shortcuts</span>
+  </div>
+
+  <!-- Hidden file input for import -->
+  <input type="file" id="rImportInput" accept=".json" style="display:none" onchange="doRImport(event)">
+
+  <!-- ══ TAB: RECEIPT ══ -->
+  <div class="r-tab-content active" id="r-tab-receipt">
+  <div class="r-main-wrap">
+    <div class="r-form-panel">
+      <h2 style="color:#fff;font-size:15px;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;gap:8px;">✏️ بيانات الإيصال</h2>
+
+      <div class="r-section-title">معلومات الدفع</div>
+      <div class="r-form-group">
+        <label>طريقة الدفع</label>
+        <select id="rf_method" onchange="rUpdate()">
+          <option value="نقدا">نقدا</option>
+          <option value="بطاقة">بطاقة</option>
+          <option value="تحويل بنكي">تحويل بنكي</option>
+          <option value="محفظة إلكترونية">محفظة إلكترونية</option>
+        </select>
+      </div>
+      <div class="r-form-group">
+        <label>القيمة المستحقة / مبلغ العملية (EGP)</label>
+        <input type="number" id="rf_amount" placeholder="0.00" oninput="rOnAmountChange()" step="0.01">
+      </div>
+
+      <div class="r-section-title">تفاصيل الإيصال</div>
+      <div class="r-form-group">
+        <label>رقم التسجيل</label>
+        <input type="text" id="rf_reg" oninput="rUpdate()">
+      </div>
+      <div class="r-form-group">
+        <label>نص Payment for <span style="color:#4a7a96;font-size:10px">(اختر أو اكتب)</span></label>
+        <select class="r-payfor-select" id="rf_payfor_select" onchange="rOnPayforSelect()">
+          <option value="">— اختر نصاً —</option>
+        </select>
+        <div class="r-payfor-edit-row">
+          <input type="text" id="rf_payfor_code" placeholder="اكتب أو عدّل النص..." oninput="rUpdate()">
+          <button class="r-btn-add-template" onclick="rAddPayforTemplate()" title="حفظ كقالب">＋</button>
+          <button class="r-btn-del-template" onclick="rDelPayforTemplate()" title="حذف القالب">🗑</button>
+        </div>
+      </div>
+      <div class="r-form-group">
+        <label>تاريخ الإصدار <span style="color:#4a7a96;font-size:10px">(تلقائي)</span></label>
+        <input type="date" id="rf_issue" oninput="rOnIssueDateChange()">
+      </div>
+      <div class="r-form-group">
+        <label>تاريخ الانتهاء <span style="color:#4a7a96;font-size:10px">(تلقائي)</span></label>
+        <input type="date" id="rf_expire" oninput="rUpdate()">
+      </div>
+
+      <div class="r-section-title">تكلفة الخدمة</div>
+      <div class="r-form-group">
+        <label>نسبة تكلفة الخدمة (%)</label>
+        <div class="r-fee-wrap">
+          <input type="number" id="rf_fee_pct" value="0" min="0" max="100" step="0.1" oninput="rOnFeeChange()" placeholder="0">
+          <div class="r-fee-badge" id="rfee_computed_badge">= EGP 0.00</div>
+        </div>
+        <div class="r-form-hint">أدخل النسبة % وسيتم الحساب تلقائياً</div>
+      </div>
+
+      <div class="r-btn-group">
+        <button class="r-btn r-btn-print" onclick="rPrintReceipt()">🖨️ طباعة الإيصال</button>
+        <button class="r-btn r-btn-save-img" onclick="rSaveAsImage()">💾 حفظ كصورة JPG</button>
+        <button class="r-btn r-btn-backup" onclick="rSetupBackupFolder()">📁 مجلد النسخ الاحتياطي</button>
+        <button class="r-btn r-btn-reset" onclick="rResetForm()">🔄 تفريغ النموذج</button>
+      </div>
+      <div class="r-backup-status" id="rBackupStatus"></div>
+    </div>
+
+    <div class="r-preview-panel">
+      <div class="r-preview-label">معاينة الإيصال</div>
+      <div id="r-receipt">
+        <div class="rr-header">
+          <div class="rr-header-label">طريقة الدفع</div>
+          <div class="rr-header-value" id="rr_method">نقدا</div>
+        </div>
+        <div class="rr-body">
+          <div class="rr-card">
+            <div class="rr-card-title">التفاصيل</div>
+            <div class="rr-card-bignum" id="rr_bignum">—</div>
+            <div class="rr-row">
+              <div class="rr-row-label">القيمة المستحقة</div>
+              <div class="rr-row-val" id="rr_amount">EGP 0.00</div>
+            </div>
+            <div class="rr-row">
+              <div class="rr-row-label" id="rr_reg_key">—</div>
+              <div class="rr-row-val" id="rr_reg_val">—</div>
+            </div>
+            <div class="rr-row">
+              <div class="rr-row-label">رقم التسجيل</div>
+              <div class="rr-row-val" id="rr_reg">—</div>
+            </div>
+            <div class="rr-payfor">
+              Payment for<br>
+              <span class="rr-payfor-line2" id="rr_payfor_code">—</span>
+            </div>
+          </div>
+        </div>
+        <div class="rr-divider"></div>
+        <div class="rr-details">
+          <div class="rr-detail-row">
+            <div class="rr-detail-label">تاريخ الإصدار</div>
+            <div class="rr-detail-val" id="rr_issue">—</div>
+          </div>
+          <div class="rr-detail-row">
+            <div class="rr-detail-label">تاريخ الانتهاء</div>
+            <div class="rr-detail-val" id="rr_expire">—</div>
+          </div>
+          <div class="rr-detail-row">
+            <div class="rr-detail-label">مبلغ العملية</div>
+            <div class="rr-detail-val" id="rr_op">EGP 0.00</div>
+          </div>
+          <div class="rr-detail-row">
+            <div class="rr-detail-label">تكلفة الخدمة</div>
+            <div class="rr-detail-val" id="rr_fee">EGP 0.00</div>
+          </div>
+        </div>
+        <div class="rr-total">
+          <div class="rr-total-label">المبلغ الكلي</div>
+          <div class="rr-total-val" id="rr_total">EGP 0.00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ══ TAB: LOG ══ -->
+  <div class="r-tab-content" id="r-tab-log">
+  <div class="r-log-wrap">
+    <div class="r-log-top">
+      <h2 style="color:#1c2b3a;font-size:16px;font-weight:800;">📋 سجل الإيصالات</h2>
+      <div style="display:flex;gap:9px;flex-wrap:wrap;">
+        <div class="r-stat-box"><div class="sv" id="rstat_count">0</div><div class="sl">إجمالي الإيصالات</div></div>
+        <div class="r-stat-box"><div class="sv" id="rstat_ops">EGP 0.00</div><div class="sl">إجمالي المبالغ</div></div>
+        <div class="r-stat-box"><div class="sv" id="rstat_profit">EGP 0.00</div><div class="sl">إجمالي الدخل</div></div>
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
+        <button class="r-action-btn" style="background:#27ae60;color:#fff;" onclick="rExportExcel()">📊 Excel</button>
+        <button class="r-action-btn" style="background:#8e44ad;color:#fff;" onclick="document.getElementById('rImportInput').click()">📥 استيراد</button>
+        <button class="r-action-btn" style="background:#0e5f78;color:#fff;" onclick="rPrintLog()">🖨️ طباعة</button>
+        <button class="r-action-btn" style="background:#e74c3c;color:#fff;" onclick="rOpenPdfModal()">📄 PDF</button>
+        <button class="r-action-btn" style="background:#c0392b;color:#fff;" onclick="rAskClearLog()">🗑️ مسح الكل</button>
+      </div>
+    </div>
+
+    <div class="r-filter-bar">
+      <input type="text" id="rFilterText" placeholder="🔍 بحث برقم التسجيل أو الكود..." oninput="rRenderLog()" style="flex:1;min-width:140px;">
+      <select id="rFilterMethod" onchange="rRenderLog()">
+        <option value="">كل طرق الدفع</option>
+        <option value="نقدا">نقدا</option>
+        <option value="بطاقة">بطاقة</option>
+        <option value="تحويل بنكي">تحويل بنكي</option>
+        <option value="محفظة إلكترونية">محفظة إلكترونية</option>
+      </select>
+      <select id="rFilterDate" onchange="rRenderLog()">
+        <option value="today">اليوم</option>
+        <option value="week">هذا الأسبوع</option>
+        <option value="month">هذا الشهر</option>
+        <option value="all">كل السجلات</option>
+      </select>
+    </div>
+
+    <div class="r-log-table-wrap">
+      <table class="r-log-table">
+        <thead>
+          <tr>
+            <th>#</th><th>الوقت</th><th>رقم التسجيل</th><th>Payment for</th>
+            <th>طريقة الدفع</th><th>مبلغ العملية</th><th>تكلفة الخدمة</th>
+            <th>المبلغ الكلي</th><th>الدخل الصافي</th><th>تاريخ الإصدار</th>
+            <th>تاريخ الانتهاء</th><th>الإيصال</th><th>إجراء</th>
+          </tr>
+        </thead>
+        <tbody id="rLogBody">
+          <tr><td colspan="13" class="r-log-empty">لا توجد إيصالات بعد</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  </div>
+
+  <!-- ══ TAB: SUMMARY ══ -->
+  <div class="r-tab-content" id="r-tab-summary">
+  <div class="r-summary-wrap">
+    <h2 style="color:#1c2b3a;font-size:16px;font-weight:800;margin-bottom:14px;">📊 الملخصات والتقارير</h2>
+    <div style="display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap;">
+      <button class="r-period-btn active" onclick="rSetPeriod('week',this)">هذا الأسبوع</button>
+      <button class="r-period-btn" onclick="rSetPeriod('month',this)">هذا الشهر</button>
+      <button class="r-period-btn" onclick="rSetPeriod('all',this)">كل الوقت</button>
+      <button class="r-period-btn" style="margin-right:auto;background:rgba(231,76,60,0.15);border-color:rgba(231,76,60,0.4);color:#e74c3c;" onclick="rOpenPdfModal()">📄 تصدير PDF</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:16px;" id="rSummaryCards"></div>
+    <div class="r-chart-section">
+      <h3 style="color:#0e5f78;font-size:12px;font-weight:700;margin-bottom:12px;">📈 الإيرادات اليومية (آخر 7 أيام)</h3>
+      <div class="r-bar-chart" id="rBarChart"></div>
+    </div>
+    <div class="r-chart-section">
+      <h3 style="color:#0e5f78;font-size:12px;font-weight:700;margin-bottom:12px;">💳 توزيع طرق الدفع</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;" id="rMethodBreakdown"></div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ══ TAB: SETTINGS ══ -->
+  <div class="r-tab-content" id="r-tab-settings">
+  <div class="r-settings-wrap">
+    <h2 style="color:#1c2b3a;font-size:16px;font-weight:800;margin-bottom:16px;">⚙️ إعدادات نظام الإيصالات</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:860px;">
+
+      <div class="r-settings-card">
+        <h3>🔐 تغيير الرقم السري</h3>
+        <div class="r-s-form-group">
+          <label>الرقم السري الحالي</label>
+          <input type="password" id="rs_old_pin" placeholder="أدخل الرقم الحالي">
+        </div>
+        <div class="r-s-form-group">
+          <label>الرقم السري الجديد</label>
+          <input type="password" id="rs_new_pin" placeholder="6 خانات على الأقل">
+        </div>
+        <div class="r-s-form-group">
+          <label>تأكيد الرقم الجديد</label>
+          <input type="password" id="rs_confirm_pin" placeholder="أعد الكتابة">
+        </div>
+        <button class="r-btn-save-settings" onclick="rChangePin()">حفظ الرقم السري</button>
+        <div class="r-settings-success" id="rpin_success">✅ تم التغيير</div>
+        <div style="color:#e74c3c;font-size:12px;margin-top:6px;min-height:14px;" id="rpin_error"></div>
+      </div>
+
+      <div class="r-settings-card">
+        <h3>💰 الإعدادات الافتراضية</h3>
+        <div class="r-s-form-group">
+          <label>نسبة تكلفة الخدمة الافتراضية (%)</label>
+          <input type="number" id="rs_default_fee" min="0" max="100" step="0.1" placeholder="0">
+        </div>
+        <div class="r-s-form-group">
+          <label>أيام الانتهاء بعد الإصدار</label>
+          <input type="number" id="rs_expire_days" min="1" max="365" placeholder="3">
+        </div>
+        <div class="r-s-form-group">
+          <label>طريقة الدفع الافتراضية</label>
+          <select id="rs_default_method" style="width:100%;border:1.5px solid #dde6ec;border-radius:8px;padding:9px 12px;font-family:'Tajawal',sans-serif;font-size:13px;color:#1c2b3a;background:#fff;outline:none;">
+            <option value="نقدا">نقدا</option>
+            <option value="بطاقة">بطاقة</option>
+            <option value="تحويل بنكي">تحويل بنكي</option>
+            <option value="محفظة إلكترونية">محفظة إلكترونية</option>
+          </select>
+        </div>
+        <button class="r-btn-save-settings" onclick="rSaveSettings()">💾 حفظ الإعدادات</button>
+        <div class="r-settings-success" id="rsettings_success">✅ تم الحفظ</div>
+      </div>
+
+      <div class="r-settings-card">
+        <h3>📁 النسخ الاحتياطي</h3>
+        <p style="font-size:12px;color:#7fa3be;margin-bottom:12px;line-height:1.7">اختر مجلداً على جهازك مرة واحدة، وسيتم التحديث تلقائياً بعد كل حفظ.</p>
+        <button class="r-btn-save-settings" onclick="rSetupBackupFolder()" style="margin-bottom:8px;width:100%">📁 اختيار مجلد النسخ</button>
+        <div class="r-backup-folder-info" id="rBackupFolderInfo"></div>
+        <div style="margin-top:12px;border-top:1px solid #edf2f6;padding-top:12px;">
+          <button class="r-btn-save-settings" onclick="rManualBackup()" style="background:#27ae60;width:100%;margin-bottom:6px">💾 نسخ احتياطي الآن</button>
+          <button class="r-btn-save-settings" onclick="document.getElementById('rImportInput').click()" style="background:#8e44ad;width:100%">📥 استيراد نسخة احتياطية</button>
+        </div>
+      </div>
+
+      <div class="r-settings-card">
+        <h3>ℹ️ معلومات النظام</h3>
+        <div id="rSysInfoRows"></div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+</div>
+<!-- end pg-receipts -->
+
+
 </div><!-- end app-screen -->
 
 <!-- MODALS -->
@@ -3610,8 +4537,713 @@ body.dark #actions-menu button:hover{background:#263238!important;}
 <button id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="للأعلى">↑</button>
 <button id="dark-toggle" onclick="toggleDarkMode()" title="الوضع الليلي">🌙</button>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js">
+
+
+/* ══════════════════════════════════════════════════════
+   💳 نظام الإيصالات — JavaScript Module
+   كل الدوال مبدوءة بـ r_ لتجنب التعارض مع نظام التقنين
+══════════════════════════════════════════════════════ */
+
+/* ════════ RECEIPT KEYS & DEFAULTS ════════ */
+const RKEYS = { log:'fawry_log', pin:'fawry_pin', cfg:'fawry_cfg' };
+const R_DEFAULT_PIN = '23081987';
+let _rBackupDirHandle = null;
+
+/* ════════ RECEIPT STORAGE ════════ */
+function rGetCfg(){
+  try{ return Object.assign({feePct:0,expireDays:3,defaultMethod:'نقدا'}, JSON.parse(localStorage.getItem(RKEYS.cfg)||'{}')); }
+  catch(e){ return {feePct:0,expireDays:3,defaultMethod:'نقدا'}; }
+}
+function rSaveCfg(c){ localStorage.setItem(RKEYS.cfg, JSON.stringify(c)); }
+function rGetPin(){ return localStorage.getItem(RKEYS.pin) || R_DEFAULT_PIN; }
+function rGetLog(){ try{ return JSON.parse(localStorage.getItem(RKEYS.log)||'[]'); } catch(e){ return []; } }
+function rSaveLog(a){ localStorage.setItem(RKEYS.log, JSON.stringify(a)); }
+
+/* ════════ RECEIPT TOAST ════════ */
+function rToast(msg, type='success', duration=3000){
+  const icons={success:'✅',error:'❌',info:'ℹ️',warning:'⚠️'};
+  const container = document.getElementById('rToastContainer');
+  if(!container) return;
+  const el = document.createElement('div');
+  el.className = `r-toast ${type}`;
+  el.innerHTML = `<span>${icons[type]||''}</span><span>${msg}</span>`;
+  container.appendChild(el);
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>el.classList.add('show')); });
+  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(), 400); }, duration);
+}
+
+/* ════════ RECEIPT PIN MODAL ════════ */
+let _rPinResolve = null;
+function rAskPin(title='🔐 تأكيد الهوية', desc='أدخل الرقم السري للمتابعة'){
+  return new Promise(res => {
+    _rPinResolve = res;
+    document.getElementById('rPinTitle').textContent = title;
+    document.getElementById('rPinDesc').textContent = desc;
+    document.getElementById('rPinInput').value = '';
+    document.getElementById('rPinError').textContent = '';
+    document.getElementById('rPinModal').classList.add('open');
+    setTimeout(()=>document.getElementById('rPinInput').focus(), 100);
+  });
+}
+window.rConfirmPin = function(){
+  const v = document.getElementById('rPinInput').value;
+  if(v === rGetPin()){
+    document.getElementById('rPinModal').classList.remove('open');
+    if(_rPinResolve){ _rPinResolve(true); _rPinResolve=null; }
+  } else {
+    document.getElementById('rPinError').textContent = '❌ الرقم السري غير صحيح';
+    document.getElementById('rPinInput').value = '';
+    document.getElementById('rPinInput').focus();
+  }
+};
+window.rCancelPin = function(){
+  document.getElementById('rPinModal').classList.remove('open');
+  if(_rPinResolve){ _rPinResolve(false); _rPinResolve=null; }
+};
+
+/* ════════ HELPERS ════════ */
+function rFmt(v){ const n=parseFloat(v); return isNaN(n)?'EGP 0.00':'EGP '+n.toFixed(2); }
+function rFmtDate(v){ if(!v)return '—'; const[y,m,d]=v.split('-'); return d+'/'+m+'/'+y; }
+function rPad(n){ return String(n).padStart(2,'0'); }
+function rTodayStr(){ const d=new Date(); return d.getFullYear()+'-'+rPad(d.getMonth()+1)+'-'+rPad(d.getDate()); }
+function rAddDays(s,n){ const d=new Date(s); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+rPad(d.getMonth()+1)+'-'+rPad(d.getDate()); }
+function rNowTime(){ return new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+function rStartOfWeek(){ const d=new Date(); d.setDate(d.getDate()-d.getDay()); return d.getFullYear()+'-'+rPad(d.getMonth()+1)+'-'+rPad(d.getDate()); }
+function rStartOfMonth(){ const d=new Date(); return d.getFullYear()+'-'+rPad(d.getMonth()+1)+'-01'; }
+
+/* ════════ INIT RECEIPT SYSTEM ════════ */
+window.initReceiptSystem = function(){
+  if(window._rSystemInitialized) return;
+  window._rSystemInitialized = true;
+  const cfg = rGetCfg();
+  const today = rTodayStr();
+  document.getElementById('rf_issue').value = today;
+  document.getElementById('rf_expire').value = rAddDays(today, cfg.expireDays||3);
+  document.getElementById('rf_fee_pct').value = cfg.feePct||0;
+  document.getElementById('rf_method').value = cfg.defaultMethod||'نقدا';
+  rRenderPayforSelect();
+  rUpdate();
+  rUpdateLogBadge();
+  rStartClock();
+  setInterval(rUpdateStatsBar, 5000);
+  rUpdateStatsBar();
+  rInitSettingsForm();
+};
+
+/* ════════ RECEIPT TAB SWITCHING ════════ */
+window.switchRTab = function(name, btn){
+  document.querySelectorAll('.r-tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.r-tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(name)?.classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(name==='r-tab-log') rRenderLog();
+  if(name==='r-tab-summary') rRenderSummary('week');
+  if(name==='r-tab-settings') rInitSettingsForm();
+};
+
+/* ════════ PAYFOR TEMPLATES ════════ */
+const R_DEFAULT_TEMPLATES = [
+  '7639133-CODEMETER-mp1zixy2',
+  '25908251202407-رسم فحص مباني',
+  'طلب رفع مساحي'
+];
+function rGetTemplates(){
+  try{ const t=JSON.parse(localStorage.getItem('fawry_templates')||'null'); return t||[...R_DEFAULT_TEMPLATES]; }
+  catch(e){ return [...R_DEFAULT_TEMPLATES]; }
+}
+function rSaveTemplates(arr){ localStorage.setItem('fawry_templates', JSON.stringify(arr)); }
+
+function rRenderPayforSelect(){
+  const sel = document.getElementById('rf_payfor_select');
+  if(!sel) return;
+  const templates = rGetTemplates();
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— اختر نصاً —</option>';
+  templates.forEach((t,i)=>{
+    const opt = document.createElement('option');
+    opt.value = t;
+    opt.textContent = t.length>38 ? t.slice(0,38)+'…' : t;
+    sel.appendChild(opt);
+  });
+  sel.value = cur;
+}
+window.rOnPayforSelect = function(){
+  const v = document.getElementById('rf_payfor_select').value;
+  if(v){ document.getElementById('rf_payfor_code').value = v; rUpdate(); }
+};
+window.rAddPayforTemplate = function(){
+  const val = document.getElementById('rf_payfor_code').value.trim();
+  if(!val){ rToast('اكتب نصاً أولاً','warning'); return; }
+  const templates = rGetTemplates();
+  if(templates.includes(val)){ rToast('هذا النص موجود بالفعل','info'); return; }
+  templates.push(val); rSaveTemplates(templates); rRenderPayforSelect();
+  document.getElementById('rf_payfor_select').value = val;
+  rToast('✅ تم حفظ النص كقالب');
+};
+window.rDelPayforTemplate = function(){
+  const val = document.getElementById('rf_payfor_select').value;
+  if(!val){ rToast('اختر قالباً لحذفه','warning'); return; }
+  rSaveTemplates(rGetTemplates().filter(t=>t!==val));
+  rRenderPayforSelect();
+  rToast('تم حذف القالب','warning');
+};
+
+/* ════════ STATS BAR ════════ */
+function rUpdateStatsBar(){
+  const today = rTodayStr();
+  const log = rGetLog().filter(r=>r.date===today);
+  const el_count = document.getElementById('rsb_today_count');
+  const el_total = document.getElementById('rsb_today_total');
+  const el_profit = document.getElementById('rsb_today_profit');
+  if(el_count) el_count.textContent = log.length;
+  if(el_total) el_total.textContent = 'EGP '+log.reduce((s,r)=>s+r.total,0).toFixed(2);
+  if(el_profit) el_profit.textContent = 'EGP '+log.reduce((s,r)=>s+r.profit,0).toFixed(2);
+}
+function rStartClock(){
+  function tick(){
+    const d = new Date();
+    const el = document.getElementById('rsb_time');
+    if(el) el.textContent = d.toLocaleDateString('ar-EG')+'  '+d.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }
+  tick(); setInterval(tick, 1000);
+}
+
+/* ════════ SHORTCUTS ════════ */
+window.toggleRShortcuts = function(){
+  document.getElementById('rShortcutsPanel')?.classList.toggle('open');
+};
+
+/* ════════ LOG BADGE ════════ */
+function rUpdateLogBadge(){
+  const n = rGetLog().length;
+  const b = document.getElementById('rLogBadge');
+  if(b){ b.textContent=n; b.style.display=n>0?'inline':'none'; }
+}
+
+/* ════════ FORM EVENTS ════════ */
+window.rOnAmountChange = function(){ rOnFeeChange(); };
+window.rOnIssueDateChange = function(){
+  const cfg = rGetCfg();
+  const v = document.getElementById('rf_issue').value;
+  if(v) document.getElementById('rf_expire').value = rAddDays(v, cfg.expireDays||3);
+  rUpdate();
+};
+window.rOnFeeChange = function(){
+  const a = parseFloat(document.getElementById('rf_amount').value)||0;
+  const p = parseFloat(document.getElementById('rf_fee_pct').value)||0;
+  const badge = document.getElementById('rfee_computed_badge');
+  if(badge) badge.textContent = '= EGP '+(a*p/100).toFixed(2);
+  rUpdate();
+};
+window.rResetForm = function(){
+  document.getElementById('rf_amount').value='';
+  document.getElementById('rf_reg').value='';
+  document.getElementById('rf_payfor_code').value='';
+  const cfg = rGetCfg();
+  const today = rTodayStr();
+  document.getElementById('rf_issue').value = today;
+  document.getElementById('rf_expire').value = rAddDays(today, cfg.expireDays||3);
+  document.getElementById('rf_fee_pct').value = cfg.feePct||0;
+  document.getElementById('rf_method').value = cfg.defaultMethod||'نقدا';
+  rUpdate();
+  rToast('تم تفريغ النموذج','info');
+};
+
+/* ════════ UPDATE RECEIPT PREVIEW ════════ */
+window.rUpdate = function(){
+  const method  = document.getElementById('rf_method').value;
+  const amount  = parseFloat(document.getElementById('rf_amount').value)||0;
+  const reg     = document.getElementById('rf_reg').value||'—';
+  const payref  = document.getElementById('rf_payfor_code').value||'—';
+  const issue   = document.getElementById('rf_issue').value;
+  const expire  = document.getElementById('rf_expire').value;
+  const pct     = parseFloat(document.getElementById('rf_fee_pct').value)||0;
+  const fee     = amount*pct/100;
+  const total   = amount+fee;
+
+  const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('rr_method', method);
+  set('rr_bignum', reg);
+  set('rr_reg_key', reg);
+  set('rr_reg_val', reg);
+  set('rr_reg', reg);
+  set('rr_amount', rFmt(amount));
+  set('rr_payfor_code', payref);
+  set('rr_issue', rFmtDate(issue));
+  set('rr_expire', rFmtDate(expire));
+  set('rr_op', rFmt(amount));
+  set('rr_fee', rFmt(fee));
+  set('rr_total', rFmt(total));
+  const badge = document.getElementById('rfee_computed_badge');
+  if(badge) badge.textContent = '= EGP '+fee.toFixed(2);
+};
+
+/* ════════ ADD TO LOG ════════ */
+function rAddToLog(imgDataUrl){
+  const amount = parseFloat(document.getElementById('rf_amount').value)||0;
+  const pct    = parseFloat(document.getElementById('rf_fee_pct').value)||0;
+  const fee    = amount*pct/100;
+  const entry  = {
+    id: Date.now(), time: rNowTime(), date: rTodayStr(),
+    reg:    document.getElementById('rf_reg').value||'—',
+    payfor: document.getElementById('rf_payfor_code').value||'—',
+    method: document.getElementById('rf_method').value,
+    issue:  rFmtDate(document.getElementById('rf_issue').value),
+    expire: rFmtDate(document.getElementById('rf_expire').value),
+    amount, fee, total:amount+fee, profit:fee, img:imgDataUrl||null
+  };
+  const log = rGetLog(); log.unshift(entry); rSaveLog(log);
+  rUpdateLogBadge();
+}
+
+/* ════════ FILTER LOG ════════ */
+function rFilterLog(){
+  let log = rGetLog();
+  const search = (document.getElementById('rFilterText')?.value||'').toLowerCase();
+  const method = document.getElementById('rFilterMethod')?.value||'';
+  const dateF  = document.getElementById('rFilterDate')?.value||'today';
+  const today=rTodayStr(), sw=rStartOfWeek(), sm=rStartOfMonth();
+  if(dateF==='today')  log=log.filter(r=>r.date===today);
+  else if(dateF==='week')  log=log.filter(r=>r.date>=sw);
+  else if(dateF==='month') log=log.filter(r=>r.date>=sm);
+  if(method) log=log.filter(r=>r.method===method);
+  if(search) log=log.filter(r=>(r.reg+r.payfor).toLowerCase().includes(search));
+  return log;
+}
+
+/* ════════ RENDER LOG ════════ */
+window.rRenderLog = function(){
+  const log = rFilterLog();
+  const el_count  = document.getElementById('rstat_count');
+  const el_ops    = document.getElementById('rstat_ops');
+  const el_profit = document.getElementById('rstat_profit');
+  if(el_count)  el_count.textContent  = log.length;
+  if(el_ops)    el_ops.textContent    = 'EGP '+log.reduce((s,r)=>s+r.amount,0).toFixed(2);
+  if(el_profit) el_profit.textContent = 'EGP '+log.reduce((s,r)=>s+r.profit,0).toFixed(2);
+  const tbody = document.getElementById('rLogBody');
+  if(!tbody) return;
+  if(!log.length){ tbody.innerHTML='<tr><td colspan="13" class="r-log-empty">لا توجد إيصالات تطابق البحث</td></tr>'; return; }
+  tbody.innerHTML = log.map((r,i)=>`
+    <tr>
+      <td class="r-log-num">${log.length-i}</td>
+      <td class="r-log-num" style="font-size:10px">${r.time}<br><span style="color:#8fa8bc">${r.date}</span></td>
+      <td class="r-log-num">${r.reg}</td>
+      <td style="max-width:130px;word-break:break-all;font-size:11px">${r.payfor}</td>
+      <td><span class="r-badge-method">${r.method}</span></td>
+      <td class="r-log-num">EGP ${r.amount.toFixed(2)}</td>
+      <td class="r-log-num">EGP ${r.fee.toFixed(2)}</td>
+      <td class="r-log-num" style="font-weight:800">EGP ${r.total.toFixed(2)}</td>
+      <td class="r-log-profit">EGP ${r.profit.toFixed(2)}</td>
+      <td class="r-log-num">${r.issue}</td>
+      <td class="r-log-num">${r.expire}</td>
+      <td>${r.img
+        ? `<img class="r-log-img-thumb" src="${r.img}" onclick="rOpenImgModal('${r.img}')" title="عرض"><a href="${r.img}" download="receipt_${r.reg}.jpg" style="font-size:10px;color:#0e5f78">💾</a>`
+        : '<span style="color:#bbb;font-size:10px">—</span>'
+      }</td>
+      <td><button class="r-btn-del-row" onclick="rAskDeleteRow(${r.id})">🗑️</button></td>
+    </tr>`).join('');
+};
+
+/* ════════ DELETE / CLEAR (PIN PROTECTED) ════════ */
+window.rAskDeleteRow = async function(id){
+  const ok = await rAskPin('🗑️ حذف إيصال','أدخل الرقم السري لحذف هذا الإيصال');
+  if(!ok) return;
+  rSaveLog(rGetLog().filter(r=>r.id!==id));
+  rRenderLog(); rUpdateLogBadge();
+  rToast('تم حذف الإيصال','warning');
+};
+window.rAskClearLog = async function(){
+  const ok = await rAskPin('🗑️ مسح الكل','أدخل الرقم السري لمسح كل السجلات');
+  if(!ok) return;
+  if(!confirm('هل أنت متأكد تماماً؟ لا يمكن التراجع!')) return;
+  rSaveLog([]); rRenderLog(); rUpdateLogBadge();
+  rToast('تم مسح السجل كاملاً','warning');
+};
+
+/* ════════ SETTINGS ════════ */
+function rInitSettingsForm(){
+  const cfg = rGetCfg();
+  const el_fee     = document.getElementById('rs_default_fee');
+  const el_days    = document.getElementById('rs_expire_days');
+  const el_method  = document.getElementById('rs_default_method');
+  const el_sysinfo = document.getElementById('rSysInfoRows');
+  if(el_fee)    el_fee.value    = cfg.feePct||0;
+  if(el_days)   el_days.value   = cfg.expireDays||3;
+  if(el_method) el_method.value = cfg.defaultMethod||'نقدا';
+  if(el_sysinfo) el_sysinfo.innerHTML=`
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f4f7;font-size:12px;"><span style="color:#7fa3be;font-weight:600;">الإصدار</span><span style="color:#1c2b3a;font-weight:700;">v1.0 (مدمج)</span></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f4f7;font-size:12px;"><span style="color:#7fa3be;font-weight:600;">تاريخ اليوم</span><span style="color:#1c2b3a;font-weight:700;">${new Date().toLocaleDateString('ar-EG')}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f4f7;font-size:12px;"><span style="color:#7fa3be;font-weight:600;">إجمالي الإيصالات</span><span style="color:#1c2b3a;font-weight:700;">${rGetLog().length} إيصال</span></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;"><span style="color:#7fa3be;font-weight:600;">النسخ الاحتياطي</span><span style="color:#1c2b3a;font-weight:700;">${_rBackupDirHandle?'✅ مجلد محدد':'⚠️ لم يُحدد'}</span></div>`;
+}
+window.rSaveSettings = function(){
+  const cfg = {
+    feePct:      parseFloat(document.getElementById('rs_default_fee').value)||0,
+    expireDays:  parseInt(document.getElementById('rs_expire_days').value)||3,
+    defaultMethod: document.getElementById('rs_default_method').value
+  };
+  rSaveCfg(cfg);
+  document.getElementById('rf_fee_pct').value  = cfg.feePct;
+  document.getElementById('rf_method').value   = cfg.defaultMethod;
+  rOnFeeChange();
+  const s = document.getElementById('rsettings_success');
+  if(s){ s.style.display='block'; setTimeout(()=>s.style.display='none', 2500); }
+  rToast('تم حفظ الإعدادات');
+};
+window.rChangePin = function(){
+  const oldPin  = document.getElementById('rs_old_pin').value;
+  const newPin  = document.getElementById('rs_new_pin').value;
+  const confPin = document.getElementById('rs_confirm_pin').value;
+  const errEl   = document.getElementById('rpin_error');
+  if(errEl) errEl.textContent='';
+  if(oldPin!==rGetPin()){ if(errEl)errEl.textContent='❌ الرقم الحالي غير صحيح'; return; }
+  if(!newPin||newPin.length<6){ if(errEl)errEl.textContent='❌ يجب أن يكون 6 خانات على الأقل'; return; }
+  if(newPin!==confPin){ if(errEl)errEl.textContent='❌ الرقمان غير متطابقين'; return; }
+  localStorage.setItem(RKEYS.pin, newPin);
+  ['rs_old_pin','rs_new_pin','rs_confirm_pin'].forEach(id=>{ const el=document.getElementById(id); if(el)el.value=''; });
+  const s = document.getElementById('rpin_success');
+  if(s){ s.style.display='block'; setTimeout(()=>s.style.display='none', 2500); }
+  rToast('تم تغيير الرقم السري');
+};
+
+/* ════════ FILE SYSTEM API — BACKUP ════════ */
+window.rSetupBackupFolder = async function(){
+  if(!('showDirectoryPicker' in window)){
+    rToast('المتصفح لا يدعم هذه الميزة. استخدم Chrome أو Edge','error',4000); return;
+  }
+  try{
+    _rBackupDirHandle = await window.showDirectoryPicker({mode:'readwrite'});
+    const info = document.getElementById('rBackupFolderInfo');
+    if(info){ info.textContent='📁 المجلد: '+_rBackupDirHandle.name; info.style.display='block'; }
+    const status = document.getElementById('rBackupStatus');
+    if(status) status.textContent='✅ مجلد النسخ: '+_rBackupDirHandle.name;
+    rToast('✅ تم اختيار مجلد النسخ: '+_rBackupDirHandle.name);
+    rInitSettingsForm();
+  }catch(e){ if(e.name!=='AbortError') rToast('تعذّر اختيار المجلد','error'); }
+};
+async function rWriteBackupFile(){
+  if(!_rBackupDirHandle) return false;
+  try{
+    const log = rGetLog();
+    const data = JSON.stringify({version:'1.0',exported:new Date().toISOString(),count:log.length,records:log},null,2);
+    const fileHandle = await _rBackupDirHandle.getFileHandle('fawry_backup.json',{create:true});
+    const writable = await fileHandle.createWritable();
+    await writable.write(data); await writable.close();
+    return true;
+  }catch(e){ console.error('Backup:',e); return false; }
+}
+window.rManualBackup = async function(){
+  if(!_rBackupDirHandle){ await rSetupBackupFolder(); if(!_rBackupDirHandle)return; }
+  const ok = await rWriteBackupFile();
+  if(ok) rToast('✅ تم حفظ النسخة الاحتياطية في '+_rBackupDirHandle.name);
+  else rToast('حدث خطأ أثناء النسخ','error');
+};
+async function rAutoBackup(){
+  if(!_rBackupDirHandle) return;
+  const ok = await rWriteBackupFile();
+  const status = document.getElementById('rBackupStatus');
+  if(ok&&status) status.textContent='✅ آخر نسخ: '+rNowTime();
+}
+
+/* ════════ IMPORT BACKUP ════════ */
+window.doRImport = async function(event){
+  const file = event.target.files[0]; if(!file) return;
+  try{
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const imported = data.records||data;
+    if(!Array.isArray(imported)){ rToast('ملف غير صالح','error'); return; }
+    const existing = rGetLog();
+    const existingIds = new Set(existing.map(r=>r.id));
+    const newRecs = imported.filter(r=>!existingIds.has(r.id));
+    const merged = [...existing,...newRecs].sort((a,b)=>b.id-a.id);
+    rSaveLog(merged); rRenderLog(); rUpdateLogBadge();
+    rToast(`✅ تم استيراد ${newRecs.length} إيصال جديد`,'success',4000);
+  }catch(e){ rToast('خطأ في قراءة الملف','error'); }
+  event.target.value='';
+};
+
+/* ════════ EXPORT EXCEL ════════ */
+window.rExportExcel = function(){
+  const log = rFilterLog();
+  if(!log.length){ rToast('لا توجد بيانات للتصدير','warning'); return; }
+  if(typeof XLSX==='undefined'){ rToast('مكتبة Excel غير محملة','error'); return; }
+  const rows = log.map((r,i)=>({
+    '#':log.length-i,'الوقت':r.time,'التاريخ':r.date,'رقم التسجيل':r.reg,
+    'Payment for':r.payfor,'طريقة الدفع':r.method,
+    'مبلغ العملية (EGP)':r.amount,'تكلفة الخدمة (EGP)':r.fee,
+    'المبلغ الكلي (EGP)':r.total,'الدخل الصافي (EGP)':r.profit,
+    'تاريخ الإصدار':r.issue,'تاريخ الانتهاء':r.expire
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'سجل الإيصالات');
+  XLSX.writeFile(wb, 'receipts_'+rTodayStr()+'.xlsx');
+  rToast('✅ تم تصدير ملف Excel');
+};
+
+/* ════════ IMAGE MODAL ════════ */
+window.rOpenImgModal = function(src){
+  const modal = document.getElementById('rImgModal');
+  const img   = document.getElementById('rModalImg');
+  if(modal&&img){ img.src=src; modal.classList.add('open'); }
+};
+window.rCloseImgModal = function(){ document.getElementById('rImgModal')?.classList.remove('open'); };
+
+/* ════════ CAPTURE RECEIPT IMAGE ════════ */
+async function rCaptureReceiptImage(){
+  if(typeof html2canvas==='undefined'){ throw new Error('html2canvas not loaded'); }
+  const canvas = await html2canvas(document.getElementById('r-receipt'),{scale:3,useCORS:true,backgroundColor:'#ffffff',logging:false});
+  return canvas.toDataURL('image/jpeg', 0.97);
+}
+
+/* ════════ PRINT RECEIPT ════════ */
+window.rPrintReceipt = async function(){
+  const ld = document.getElementById('loading');
+  if(ld){ document.getElementById('loadingText').textContent='جاري التجهيز للطباعة...'; ld.style.display='flex'; }
+  try{
+    const img = await rCaptureReceiptImage();
+    rAddToLog(img); await rAutoBackup();
+    if(ld) ld.style.display='none';
+    window.print();
+    rToast('✅ تم إرسال الإيصال للطباعة');
+  }catch(e){ if(ld)ld.style.display='none'; rToast('حدث خطأ أثناء الطباعة','error'); }
+};
+
+/* ════════ SAVE AS IMAGE ════════ */
+window.rSaveAsImage = async function(){
+  const ld = document.getElementById('loading');
+  if(ld){ document.getElementById('loadingText').textContent='جاري حفظ الصورة...'; ld.style.display='flex'; }
+  try{
+    const img = await rCaptureReceiptImage();
+    rAddToLog(img); await rAutoBackup();
+    const a = document.createElement('a');
+    a.download = 'receipt_'+(document.getElementById('rf_reg').value||'payment')+'_'+rTodayStr()+'.jpg';
+    a.href = img; a.click();
+    rToast('✅ تم حفظ الإيصال');
+  }catch(e){ rToast('حدث خطأ أثناء الحفظ','error'); }
+  finally{ if(ld)ld.style.display='none'; }
+};
+
+/* ════════ PDF EXPORT ════════ */
+let _rPdfPeriod = 'today';
+window.rOpenPdfModal = function(){ document.getElementById('rPdfModal')?.classList.add('open'); };
+window.rClosePdfModal = function(){ document.getElementById('rPdfModal')?.classList.remove('open'); };
+window.rSelectPdfPeriod = function(p,btn){
+  _rPdfPeriod=p;
+  document.querySelectorAll('.r-pdf-period-btn').forEach(b=>b.classList.remove('selected'));
+  if(btn) btn.classList.add('selected');
+};
+function rGetLogByPeriod(period){
+  let log=rGetLog();
+  const today=rTodayStr(),sw=rStartOfWeek(),sm=rStartOfMonth();
+  const sy=new Date().getFullYear()+'-01-01';
+  if(period==='today')  return log.filter(r=>r.date===today);
+  if(period==='week')   return log.filter(r=>r.date>=sw);
+  if(period==='month')  return log.filter(r=>r.date>=sm);
+  if(period==='year')   return log.filter(r=>r.date>=sy);
+  return log;
+}
+window.rDoExportPdf = function(){
+  rClosePdfModal();
+  const log = rGetLogByPeriod(_rPdfPeriod);
+  if(!log.length){ rToast('لا توجد بيانات للتصدير','warning'); return; }
+  if(typeof window.jspdf==='undefined'){ rToast('مكتبة PDF غير محملة','error'); return; }
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  doc.setFillColor(14,95,120); doc.rect(0,0,297,22,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont('helvetica','bold');
+  const periodLabels={today:'اليوم',week:'هذا الأسبوع',month:'هذا الشهر',year:'هذا العام',all:'كل السجلات'};
+  doc.text('Fawry Receipt System - Report',148,9,{align:'center'});
+  doc.setFontSize(9);
+  doc.text('Period: '+periodLabels[_rPdfPeriod]+'   |   Generated: '+new Date().toLocaleString('en-GB'),148,16,{align:'center'});
+  const totalAmt=log.reduce((s,r)=>s+r.amount,0);
+  const totalFee=log.reduce((s,r)=>s+r.fee,0);
+  const totalAll=log.reduce((s,r)=>s+r.total,0);
+  doc.setFillColor(240,247,251); doc.rect(0,22,297,14,'F');
+  doc.setTextColor(8,61,80); doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text(`Records: ${log.length}   |   Total: EGP ${totalAmt.toFixed(2)}   |   Fee: EGP ${totalFee.toFixed(2)}   |   Grand Total: EGP ${totalAll.toFixed(2)}`,148,31,{align:'center'});
+  const head=[['#','Time','Date','Reg No.','Payment For','Method','Amount','Fee','Total','Income','Issue','Expire']];
+  const body=log.map((r,i)=>[log.length-i,r.time,r.date,r.reg,r.payfor.length>25?r.payfor.slice(0,25)+'…':r.payfor,r.method,'EGP '+r.amount.toFixed(2),'EGP '+r.fee.toFixed(2),'EGP '+r.total.toFixed(2),'EGP '+r.profit.toFixed(2),r.issue,r.expire]);
+  doc.autoTable({head,body,startY:38,theme:'grid',styles:{fontSize:8,cellPadding:2.5,halign:'center'},headStyles:{fillColor:[14,95,120],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[245,250,253]},columnStyles:{4:{halign:'left',cellWidth:40},3:{cellWidth:22}},margin:{left:6,right:6}});
+  doc.save('fawry_report_'+_rPdfPeriod+'_'+rTodayStr()+'.pdf');
+  rToast('✅ تم تصدير تقرير PDF');
+};
+
+/* ════════ PRINT LOG ════════ */
+window.rPrintLog = function(){ window.print(); };
+
+/* ════════ SUMMARY ════════ */
+let _rCurrentPeriod = 'week';
+window.rSetPeriod = function(p,btn){
+  _rCurrentPeriod=p;
+  document.querySelectorAll('.r-period-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  rRenderSummary(p);
+};
+window.rRenderSummary = function(period){
+  let log = rGetLog();
+  const today=rTodayStr(),sw=rStartOfWeek(),sm=rStartOfMonth();
+  if(period==='week')  log=log.filter(r=>r.date>=sw);
+  else if(period==='month') log=log.filter(r=>r.date>=sm);
+  const totalOps=log.reduce((s,r)=>s+r.amount,0);
+  const totalFee=log.reduce((s,r)=>s+r.fee,0);
+  const totalAll=log.reduce((s,r)=>s+r.total,0);
+  const avgAmt=log.length?totalOps/log.length:0;
+  const cards = document.getElementById('rSummaryCards');
+  if(cards) cards.innerHTML=`
+    <div class="r-sum-card"><div class="sc-val">${log.length}</div><div class="sc-lbl">إجمالي الإيصالات</div></div>
+    <div class="r-sum-card" style="border-color:#27ae60"><div class="sc-val">EGP ${totalAll.toFixed(2)}</div><div class="sc-lbl">إجمالي المبالغ الكلية</div></div>
+    <div class="r-sum-card" style="border-color:#e67e22"><div class="sc-val">EGP ${totalFee.toFixed(2)}</div><div class="sc-lbl">إجمالي الدخل</div></div>
+    <div class="r-sum-card" style="border-color:#8e44ad"><div class="sc-val">EGP ${avgAmt.toFixed(2)}</div><div class="sc-lbl">متوسط قيمة الإيصال</div></div>`;
+  // Bar chart
+  const days=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const ds=d.getFullYear()+'-'+rPad(d.getMonth()+1)+'-'+rPad(d.getDate());
+    const dayLog=rGetLog().filter(r=>r.date===ds);
+    days.push({label:['أحد','إثن','ثلا','أرب','خمس','جمع','سبت'][d.getDay()],date:ds,total:dayLog.reduce((s,r)=>s+r.total,0)});
+  }
+  const maxVal=Math.max(...days.map(d=>d.total),1);
+  const barChart = document.getElementById('rBarChart');
+  if(barChart) barChart.innerHTML=days.map(d=>`
+    <div class="r-bar-wrap">
+      <div class="r-bar-val">${d.total>0?d.total.toFixed(0):''}</div>
+      <div class="r-bar" style="height:${Math.max(d.total/maxVal*110,d.total>0?6:0)}px"></div>
+      <div class="r-bar-label">${d.label}</div>
+    </div>`).join('');
+  // Method breakdown
+  const methods=['نقدا','بطاقة','تحويل بنكي','محفظة إلكترونية'];
+  const mb = document.getElementById('rMethodBreakdown');
+  if(mb) mb.innerHTML=methods.map(m=>{
+    const ml=log.filter(r=>r.method===m);
+    const mt=ml.reduce((s,r)=>s+r.total,0);
+    const pct=log.length?Math.round(ml.length/log.length*100):0;
+    return `<div class="r-method-card"><div class="mv">${ml.length} إيصال</div><div class="ml">${m}</div><div class="mc">EGP ${mt.toFixed(2)} · ${pct}%</div></div>`;
+  }).join('');
+};
+
+/* ════════ UPDATE RECEIPT STATS IN TAQNEEN DASHBOARD ════════ */
+window.updateReceiptStatsBar = function(){
+  rUpdateStatsBar();
+};
+
+/* ════════ KEYBOARD SHORTCUTS FOR RECEIPT ════════ */
+document.addEventListener('keydown', function(e){
+  if(!document.getElementById('pg-receipts')?.classList.contains('active')) return;
+  if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+  if(e.key==='Escape'){ document.getElementById('rShortcutsPanel')?.classList.remove('open'); rClosePdfModal(); rCloseImgModal(); return; }
+  if(!e.ctrlKey) return;
+  switch(e.key.toLowerCase()){
+    case 'p': e.preventDefault(); rPrintReceipt(); break;
+    case 's': e.preventDefault(); rSaveAsImage(); break;
+    case 'r': e.preventDefault(); rResetForm(); break;
+    case 'd': e.preventDefault(); rOpenPdfModal(); break;
+  }
+});
+
+/* ════════ PRINT OVERRIDE FOR RECEIPT PAGE ════════ */
+// Override window.print when receipt tab is active
+const _originalPrint = window.print.bind(window);
+window.print = function(){
+  const receiptActive = document.getElementById('pg-receipts')?.classList.contains('active');
+  if(receiptActive){
+    // Print only the receipt
+    const receiptEl = document.getElementById('r-receipt');
+    if(receiptEl){
+      const printWin = window.open('','_blank','width=600,height=800');
+      printWin.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
+        <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&family=Roboto:wght@400;700;900&display=swap" rel="stylesheet">
+        <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Tajawal',sans-serif;background:#fff;padding:10mm;}
+        ${receiptEl.outerHTML.match(/<style[^>]*>(.*?)<\/style>/s)?.[1]||''}</style>
+        </head><body>${receiptEl.outerHTML}
+        <script>window.onload=function(){window.print();window.close();};<\/script></body></html>`);
+      printWin.document.close();
+      return;
+    }
+  }
+  _originalPrint();
+};
+
+
+
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+
+<!-- ══ RECEIPT SYSTEM OVERLAYS ══ -->
+
+<!-- Receipt Toast Container -->
+<div class="r-toast-container" id="rToastContainer"></div>
+
+<!-- Receipt Image Modal -->
+<div class="r-img-modal" id="rImgModal" onclick="rCloseImgModal()">
+  <button class="r-img-modal-close" onclick="rCloseImgModal()">✕</button>
+  <img id="rModalImg" src="" alt="إيصال" onclick="event.stopPropagation()">
+</div>
+
+<!-- Receipt PIN Modal (for log delete/clear) -->
+<div class="r-modal-overlay" id="rPinModal">
+  <div class="r-modal-box">
+    <h3 id="rPinTitle">🔐 تأكيد الهوية</h3>
+    <p id="rPinDesc">أدخل الرقم السري للمتابعة</p>
+    <input type="password" id="rPinInput" placeholder="••••••••" maxlength="20" onkeydown="if(event.key==='Enter')rConfirmPin()">
+    <div class="r-modal-error" id="rPinError"></div>
+    <div class="r-modal-btns">
+      <button class="r-modal-btn-ok" onclick="rConfirmPin()">تأكيد</button>
+      <button class="r-modal-btn-cancel" onclick="rCancelPin()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Employee PIN Access Modal -->
+<div class="receipt-pin-overlay" id="receiptPinModal">
+  <div class="r-modal-box">
+    <h3>🔐 نظام الإيصالات</h3>
+    <p>هذا القسم يتطلب رقم سري للموظفين</p>
+    <input type="password" id="receiptPinInput" placeholder="أدخل الرقم السري" maxlength="20" onkeydown="if(event.key==='Enter')confirmReceiptPin()">
+    <div class="r-modal-error" id="receiptPinError"></div>
+    <div class="r-modal-btns">
+      <button class="r-modal-btn-ok" onclick="confirmReceiptPin()">دخول</button>
+      <button class="r-modal-btn-cancel" onclick="cancelReceiptPin()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt PDF Modal -->
+<div class="r-pdf-modal-overlay" id="rPdfModal">
+  <div class="r-pdf-modal-box">
+    <h3>📄 تصدير تقرير PDF</h3>
+    <div class="r-pdf-period-grid">
+      <div class="r-pdf-period-btn selected" onclick="rSelectPdfPeriod('today',this)">📅 اليوم</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('week',this)">📅 هذا الأسبوع</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('month',this)">📅 هذا الشهر</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('year',this)">📅 هذا العام</div>
+      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('all',this)" style="grid-column:span 2">📋 كل السجلات</div>
+    </div>
+    <div class="r-pdf-modal-btns">
+      <button class="r-pdf-btn-ok" onclick="rDoExportPdf()">📄 تصدير</button>
+      <button class="r-pdf-btn-cancel" onclick="rClosePdfModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Shortcuts Panel -->
+<div class="r-shortcuts-panel" id="rShortcutsPanel">
+  <h3 style="color:#fff;font-size:14px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;">
+    ⌨️ اختصارات الإيصالات
+    <span onclick="toggleRShortcuts()" style="cursor:pointer;color:#e74c3c;font-size:18px">✕</span>
+  </h3>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">طباعة الإيصال</span><span class="r-shortcut-key">Ctrl+P</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">حفظ كصورة</span><span class="r-shortcut-key">Ctrl+S</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">تفريغ النموذج</span><span class="r-shortcut-key">Ctrl+R</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">تصدير PDF</span><span class="r-shortcut-key">Ctrl+D</span></div>
+  <div class="r-shortcut-row"><span class="r-shortcut-desc">إغلاق النوافذ</span><span class="r-shortcut-key">Esc</span></div>
+</div>
 
 </body>
 </html>
