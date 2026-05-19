@@ -2704,9 +2704,7 @@ window.printTableNow=function(){
     +'<p>تاريخ الطباعة: '+new Date().toLocaleDateString('ar-EG')
     +' — إجمالي: '+document.getElementById('countBadge').textContent+'</p>'
     +table.outerHTML.replace(/<th[^>]*>طباعة<\/th>/g,'').replace(/<th[^>]*>تعديل<\/th>/g,'').replace(/<th[^>]*>حذف<\/th>/g,'')
-
-
-</body></html>');
+    +'</body></html>');
   win.document.close();
   setTimeout(function(){win.print();},500);
 };
