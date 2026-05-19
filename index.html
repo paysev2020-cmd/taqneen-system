@@ -2993,10 +2993,7 @@ window.exportReportPDF=function(){
     +'</div>'
     +lateSection
     +'<div class="footer">نظام إدارة طلبات التقنين — '+dateStr+'</div>'
-    +'</div>
-
-
-</body></html>');
+    +'</div></body></html>');
   win.document.close();
   setTimeout(function(){win.print();},500);
   logAudit('export','تقرير PDF');
