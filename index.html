@@ -787,75 +787,7 @@ window.printMultiple=function(){
       @media print{@page{size:A4;margin:15mm;}body{padding:0;}}
     </style>
     </head><body>${cards}<script>window.onload=()=>window.print();<\/script>
-<!-- ══ RECEIPT SYSTEM OVERLAYS ══ -->
 
-<!-- Receipt Toast Container -->
-<div class="r-toast-container" id="rToastContainer"></div>
-
-<!-- Receipt Image Modal -->
-<div class="r-img-modal" id="rImgModal" onclick="rCloseImgModal()">
-  <button class="r-img-modal-close" onclick="rCloseImgModal()">✕</button>
-  <img id="rModalImg" src="" alt="إيصال" onclick="event.stopPropagation()">
-</div>
-
-<!-- Receipt PIN Modal (for log delete/clear) -->
-<div class="r-modal-overlay" id="rPinModal">
-  <div class="r-modal-box">
-    <h3 id="rPinTitle">🔐 تأكيد الهوية</h3>
-    <p id="rPinDesc">أدخل الرقم السري للمتابعة</p>
-    <input type="password" id="rPinInput" placeholder="••••••••" maxlength="20" onkeydown="if(event.key==='Enter')rConfirmPin()">
-    <div class="r-modal-error" id="rPinError"></div>
-    <div class="r-modal-btns">
-      <button class="r-modal-btn-ok" onclick="rConfirmPin()">تأكيد</button>
-      <button class="r-modal-btn-cancel" onclick="rCancelPin()">إلغاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- Receipt Employee PIN Access Modal -->
-<div class="receipt-pin-overlay" id="receiptPinModal">
-  <div class="r-modal-box">
-    <h3>🔐 نظام الإيصالات</h3>
-    <p>هذا القسم يتطلب رقم سري للموظفين</p>
-    <input type="password" id="receiptPinInput" placeholder="أدخل الرقم السري" maxlength="20" onkeydown="if(event.key==='Enter')confirmReceiptPin()">
-    <div class="r-modal-error" id="receiptPinError"></div>
-    <div class="r-modal-btns">
-      <button class="r-modal-btn-ok" onclick="confirmReceiptPin()">دخول</button>
-      <button class="r-modal-btn-cancel" onclick="cancelReceiptPin()">إلغاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- Receipt PDF Modal -->
-<div class="r-pdf-modal-overlay" id="rPdfModal">
-  <div class="r-pdf-modal-box">
-    <h3>📄 تصدير تقرير PDF</h3>
-    <div class="r-pdf-period-grid">
-      <div class="r-pdf-period-btn selected" onclick="rSelectPdfPeriod('today',this)">📅 اليوم</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('week',this)">📅 هذا الأسبوع</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('month',this)">📅 هذا الشهر</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('year',this)">📅 هذا العام</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('all',this)" style="grid-column:span 2">📋 كل السجلات</div>
-    </div>
-    <div class="r-pdf-modal-btns">
-      <button class="r-pdf-btn-ok" onclick="rDoExportPdf()">📄 تصدير</button>
-      <button class="r-pdf-btn-cancel" onclick="rClosePdfModal()">إلغاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- Receipt Shortcuts Panel -->
-<div class="r-shortcuts-panel" id="rShortcutsPanel">
-  <h3 style="color:#fff;font-size:14px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;">
-    ⌨️ اختصارات الإيصالات
-    <span onclick="toggleRShortcuts()" style="cursor:pointer;color:#e74c3c;font-size:18px">✕</span>
-  </h3>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">طباعة الإيصال</span><span class="r-shortcut-key">Ctrl+P</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">حفظ كصورة</span><span class="r-shortcut-key">Ctrl+S</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">تفريغ النموذج</span><span class="r-shortcut-key">Ctrl+R</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">تصدير PDF</span><span class="r-shortcut-key">Ctrl+D</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">إغلاق النوافذ</span><span class="r-shortcut-key">Esc</span></div>
-</div>
 
 </body></html>`);
   win.document.close();
@@ -1134,75 +1066,7 @@ window.viewPhotoFull = function(idx) {
   win.document.write(`<html><body style="margin:0;background:#000;display:flex;justify-content:center;align-items:center;min-height:100vh;">
     <img src="${p.base64}" style="max-width:100%;max-height:100vh;object-fit:contain;">
     
-<!-- ══ RECEIPT SYSTEM OVERLAYS ══ -->
 
-<!-- Receipt Toast Container -->
-<div class="r-toast-container" id="rToastContainer"></div>
-
-<!-- Receipt Image Modal -->
-<div class="r-img-modal" id="rImgModal" onclick="rCloseImgModal()">
-  <button class="r-img-modal-close" onclick="rCloseImgModal()">✕</button>
-  <img id="rModalImg" src="" alt="إيصال" onclick="event.stopPropagation()">
-</div>
-
-<!-- Receipt PIN Modal (for log delete/clear) -->
-<div class="r-modal-overlay" id="rPinModal">
-  <div class="r-modal-box">
-    <h3 id="rPinTitle">🔐 تأكيد الهوية</h3>
-    <p id="rPinDesc">أدخل الرقم السري للمتابعة</p>
-    <input type="password" id="rPinInput" placeholder="••••••••" maxlength="20" onkeydown="if(event.key==='Enter')rConfirmPin()">
-    <div class="r-modal-error" id="rPinError"></div>
-    <div class="r-modal-btns">
-      <button class="r-modal-btn-ok" onclick="rConfirmPin()">تأكيد</button>
-      <button class="r-modal-btn-cancel" onclick="rCancelPin()">إلغاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- Receipt Employee PIN Access Modal -->
-<div class="receipt-pin-overlay" id="receiptPinModal">
-  <div class="r-modal-box">
-    <h3>🔐 نظام الإيصالات</h3>
-    <p>هذا القسم يتطلب رقم سري للموظفين</p>
-    <input type="password" id="receiptPinInput" placeholder="أدخل الرقم السري" maxlength="20" onkeydown="if(event.key==='Enter')confirmReceiptPin()">
-    <div class="r-modal-error" id="receiptPinError"></div>
-    <div class="r-modal-btns">
-      <button class="r-modal-btn-ok" onclick="confirmReceiptPin()">دخول</button>
-      <button class="r-modal-btn-cancel" onclick="cancelReceiptPin()">إلغاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- Receipt PDF Modal -->
-<div class="r-pdf-modal-overlay" id="rPdfModal">
-  <div class="r-pdf-modal-box">
-    <h3>📄 تصدير تقرير PDF</h3>
-    <div class="r-pdf-period-grid">
-      <div class="r-pdf-period-btn selected" onclick="rSelectPdfPeriod('today',this)">📅 اليوم</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('week',this)">📅 هذا الأسبوع</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('month',this)">📅 هذا الشهر</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('year',this)">📅 هذا العام</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('all',this)" style="grid-column:span 2">📋 كل السجلات</div>
-    </div>
-    <div class="r-pdf-modal-btns">
-      <button class="r-pdf-btn-ok" onclick="rDoExportPdf()">📄 تصدير</button>
-      <button class="r-pdf-btn-cancel" onclick="rClosePdfModal()">إلغاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- Receipt Shortcuts Panel -->
-<div class="r-shortcuts-panel" id="rShortcutsPanel">
-  <h3 style="color:#fff;font-size:14px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;">
-    ⌨️ اختصارات الإيصالات
-    <span onclick="toggleRShortcuts()" style="cursor:pointer;color:#e74c3c;font-size:18px">✕</span>
-  </h3>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">طباعة الإيصال</span><span class="r-shortcut-key">Ctrl+P</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">حفظ كصورة</span><span class="r-shortcut-key">Ctrl+S</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">تفريغ النموذج</span><span class="r-shortcut-key">Ctrl+R</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">تصدير PDF</span><span class="r-shortcut-key">Ctrl+D</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">إغلاق النوافذ</span><span class="r-shortcut-key">Esc</span></div>
-</div>
 
 </body></html>`);
   win.document.close();
@@ -2168,75 +2032,7 @@ window.printCardWindow=function(){
   </style></head><body>
   <div class="print-first-page">${content}</div>
   <script>window.onload=function(){setTimeout(function(){window.print();},500);}<\/script>
-<!-- ══ RECEIPT SYSTEM OVERLAYS ══ -->
 
-<!-- Receipt Toast Container -->
-<div class="r-toast-container" id="rToastContainer"></div>
-
-<!-- Receipt Image Modal -->
-<div class="r-img-modal" id="rImgModal" onclick="rCloseImgModal()">
-  <button class="r-img-modal-close" onclick="rCloseImgModal()">✕</button>
-  <img id="rModalImg" src="" alt="إيصال" onclick="event.stopPropagation()">
-</div>
-
-<!-- Receipt PIN Modal (for log delete/clear) -->
-<div class="r-modal-overlay" id="rPinModal">
-  <div class="r-modal-box">
-    <h3 id="rPinTitle">🔐 تأكيد الهوية</h3>
-    <p id="rPinDesc">أدخل الرقم السري للمتابعة</p>
-    <input type="password" id="rPinInput" placeholder="••••••••" maxlength="20" onkeydown="if(event.key==='Enter')rConfirmPin()">
-    <div class="r-modal-error" id="rPinError"></div>
-    <div class="r-modal-btns">
-      <button class="r-modal-btn-ok" onclick="rConfirmPin()">تأكيد</button>
-      <button class="r-modal-btn-cancel" onclick="rCancelPin()">إلغاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- Receipt Employee PIN Access Modal -->
-<div class="receipt-pin-overlay" id="receiptPinModal">
-  <div class="r-modal-box">
-    <h3>🔐 نظام الإيصالات</h3>
-    <p>هذا القسم يتطلب رقم سري للموظفين</p>
-    <input type="password" id="receiptPinInput" placeholder="أدخل الرقم السري" maxlength="20" onkeydown="if(event.key==='Enter')confirmReceiptPin()">
-    <div class="r-modal-error" id="receiptPinError"></div>
-    <div class="r-modal-btns">
-      <button class="r-modal-btn-ok" onclick="confirmReceiptPin()">دخول</button>
-      <button class="r-modal-btn-cancel" onclick="cancelReceiptPin()">إلغاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- Receipt PDF Modal -->
-<div class="r-pdf-modal-overlay" id="rPdfModal">
-  <div class="r-pdf-modal-box">
-    <h3>📄 تصدير تقرير PDF</h3>
-    <div class="r-pdf-period-grid">
-      <div class="r-pdf-period-btn selected" onclick="rSelectPdfPeriod('today',this)">📅 اليوم</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('week',this)">📅 هذا الأسبوع</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('month',this)">📅 هذا الشهر</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('year',this)">📅 هذا العام</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('all',this)" style="grid-column:span 2">📋 كل السجلات</div>
-    </div>
-    <div class="r-pdf-modal-btns">
-      <button class="r-pdf-btn-ok" onclick="rDoExportPdf()">📄 تصدير</button>
-      <button class="r-pdf-btn-cancel" onclick="rClosePdfModal()">إلغاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- Receipt Shortcuts Panel -->
-<div class="r-shortcuts-panel" id="rShortcutsPanel">
-  <h3 style="color:#fff;font-size:14px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;">
-    ⌨️ اختصارات الإيصالات
-    <span onclick="toggleRShortcuts()" style="cursor:pointer;color:#e74c3c;font-size:18px">✕</span>
-  </h3>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">طباعة الإيصال</span><span class="r-shortcut-key">Ctrl+P</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">حفظ كصورة</span><span class="r-shortcut-key">Ctrl+S</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">تفريغ النموذج</span><span class="r-shortcut-key">Ctrl+R</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">تصدير PDF</span><span class="r-shortcut-key">Ctrl+D</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">إغلاق النوافذ</span><span class="r-shortcut-key">Esc</span></div>
-</div>
 
 </body></html>`);
   win.document.close();
@@ -3198,75 +2994,7 @@ window.exportReportPDF=function(){
     +lateSection
     +'<div class="footer">نظام إدارة طلبات التقنين — '+dateStr+'</div>'
     +'</div>
-<!-- ══ RECEIPT SYSTEM OVERLAYS ══ -->
 
-<!-- Receipt Toast Container -->
-<div class="r-toast-container" id="rToastContainer"></div>
-
-<!-- Receipt Image Modal -->
-<div class="r-img-modal" id="rImgModal" onclick="rCloseImgModal()">
-  <button class="r-img-modal-close" onclick="rCloseImgModal()">✕</button>
-  <img id="rModalImg" src="" alt="إيصال" onclick="event.stopPropagation()">
-</div>
-
-<!-- Receipt PIN Modal (for log delete/clear) -->
-<div class="r-modal-overlay" id="rPinModal">
-  <div class="r-modal-box">
-    <h3 id="rPinTitle">🔐 تأكيد الهوية</h3>
-    <p id="rPinDesc">أدخل الرقم السري للمتابعة</p>
-    <input type="password" id="rPinInput" placeholder="••••••••" maxlength="20" onkeydown="if(event.key==='Enter')rConfirmPin()">
-    <div class="r-modal-error" id="rPinError"></div>
-    <div class="r-modal-btns">
-      <button class="r-modal-btn-ok" onclick="rConfirmPin()">تأكيد</button>
-      <button class="r-modal-btn-cancel" onclick="rCancelPin()">إلغاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- Receipt Employee PIN Access Modal -->
-<div class="receipt-pin-overlay" id="receiptPinModal">
-  <div class="r-modal-box">
-    <h3>🔐 نظام الإيصالات</h3>
-    <p>هذا القسم يتطلب رقم سري للموظفين</p>
-    <input type="password" id="receiptPinInput" placeholder="أدخل الرقم السري" maxlength="20" onkeydown="if(event.key==='Enter')confirmReceiptPin()">
-    <div class="r-modal-error" id="receiptPinError"></div>
-    <div class="r-modal-btns">
-      <button class="r-modal-btn-ok" onclick="confirmReceiptPin()">دخول</button>
-      <button class="r-modal-btn-cancel" onclick="cancelReceiptPin()">إلغاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- Receipt PDF Modal -->
-<div class="r-pdf-modal-overlay" id="rPdfModal">
-  <div class="r-pdf-modal-box">
-    <h3>📄 تصدير تقرير PDF</h3>
-    <div class="r-pdf-period-grid">
-      <div class="r-pdf-period-btn selected" onclick="rSelectPdfPeriod('today',this)">📅 اليوم</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('week',this)">📅 هذا الأسبوع</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('month',this)">📅 هذا الشهر</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('year',this)">📅 هذا العام</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('all',this)" style="grid-column:span 2">📋 كل السجلات</div>
-    </div>
-    <div class="r-pdf-modal-btns">
-      <button class="r-pdf-btn-ok" onclick="rDoExportPdf()">📄 تصدير</button>
-      <button class="r-pdf-btn-cancel" onclick="rClosePdfModal()">إلغاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- Receipt Shortcuts Panel -->
-<div class="r-shortcuts-panel" id="rShortcutsPanel">
-  <h3 style="color:#fff;font-size:14px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;">
-    ⌨️ اختصارات الإيصالات
-    <span onclick="toggleRShortcuts()" style="cursor:pointer;color:#e74c3c;font-size:18px">✕</span>
-  </h3>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">طباعة الإيصال</span><span class="r-shortcut-key">Ctrl+P</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">حفظ كصورة</span><span class="r-shortcut-key">Ctrl+S</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">تفريغ النموذج</span><span class="r-shortcut-key">Ctrl+R</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">تصدير PDF</span><span class="r-shortcut-key">Ctrl+D</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">إغلاق النوافذ</span><span class="r-shortcut-key">Esc</span></div>
-</div>
 
 </body></html>');
   win.document.close();
@@ -5104,75 +4832,10 @@ window.print = function(){
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
 
-<!-- ══ RECEIPT SYSTEM OVERLAYS ══ -->
 
-<!-- Receipt Toast Container -->
-<div class="r-toast-container" id="rToastContainer"></div>
 
-<!-- Receipt Image Modal -->
-<div class="r-img-modal" id="rImgModal" onclick="rCloseImgModal()">
-  <button class="r-img-modal-close" onclick="rCloseImgModal()">✕</button>
-  <img id="rModalImg" src="" alt="إيصال" onclick="event.stopPropagation()">
-</div>
 
-<!-- Receipt PIN Modal (for log delete/clear) -->
-<div class="r-modal-overlay" id="rPinModal">
-  <div class="r-modal-box">
-    <h3 id="rPinTitle">🔐 تأكيد الهوية</h3>
-    <p id="rPinDesc">أدخل الرقم السري للمتابعة</p>
-    <input type="password" id="rPinInput" placeholder="••••••••" maxlength="20" onkeydown="if(event.key==='Enter')rConfirmPin()">
-    <div class="r-modal-error" id="rPinError"></div>
-    <div class="r-modal-btns">
-      <button class="r-modal-btn-ok" onclick="rConfirmPin()">تأكيد</button>
-      <button class="r-modal-btn-cancel" onclick="rCancelPin()">إلغاء</button>
-    </div>
-  </div>
-</div>
 
-<!-- Receipt Employee PIN Access Modal -->
-<div class="receipt-pin-overlay" id="receiptPinModal">
-  <div class="r-modal-box">
-    <h3>🔐 نظام الإيصالات</h3>
-    <p>هذا القسم يتطلب رقم سري للموظفين</p>
-    <input type="password" id="receiptPinInput" placeholder="أدخل الرقم السري" maxlength="20" onkeydown="if(event.key==='Enter')confirmReceiptPin()">
-    <div class="r-modal-error" id="receiptPinError"></div>
-    <div class="r-modal-btns">
-      <button class="r-modal-btn-ok" onclick="confirmReceiptPin()">دخول</button>
-      <button class="r-modal-btn-cancel" onclick="cancelReceiptPin()">إلغاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- Receipt PDF Modal -->
-<div class="r-pdf-modal-overlay" id="rPdfModal">
-  <div class="r-pdf-modal-box">
-    <h3>📄 تصدير تقرير PDF</h3>
-    <div class="r-pdf-period-grid">
-      <div class="r-pdf-period-btn selected" onclick="rSelectPdfPeriod('today',this)">📅 اليوم</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('week',this)">📅 هذا الأسبوع</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('month',this)">📅 هذا الشهر</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('year',this)">📅 هذا العام</div>
-      <div class="r-pdf-period-btn" onclick="rSelectPdfPeriod('all',this)" style="grid-column:span 2">📋 كل السجلات</div>
-    </div>
-    <div class="r-pdf-modal-btns">
-      <button class="r-pdf-btn-ok" onclick="rDoExportPdf()">📄 تصدير</button>
-      <button class="r-pdf-btn-cancel" onclick="rClosePdfModal()">إلغاء</button>
-    </div>
-  </div>
-</div>
-
-<!-- Receipt Shortcuts Panel -->
-<div class="r-shortcuts-panel" id="rShortcutsPanel">
-  <h3 style="color:#fff;font-size:14px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;">
-    ⌨️ اختصارات الإيصالات
-    <span onclick="toggleRShortcuts()" style="cursor:pointer;color:#e74c3c;font-size:18px">✕</span>
-  </h3>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">طباعة الإيصال</span><span class="r-shortcut-key">Ctrl+P</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">حفظ كصورة</span><span class="r-shortcut-key">Ctrl+S</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">تفريغ النموذج</span><span class="r-shortcut-key">Ctrl+R</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">تصدير PDF</span><span class="r-shortcut-key">Ctrl+D</span></div>
-  <div class="r-shortcut-row"><span class="r-shortcut-desc">إغلاق النوافذ</span><span class="r-shortcut-key">Esc</span></div>
-</div>
 
 
 <!-- ══ RECEIPT SYSTEM OVERLAYS ══ -->
