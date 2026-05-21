@@ -4105,56 +4105,69 @@ body.r-dark-mode #pg-receipts .r-filter-bar select { background:#263238; border-
 
     <div class="r-preview-panel">
       <div class="r-preview-label">معاينة الإيصال</div>
-      <div id="r-receipt">
-        <div class="rr-header">
-          <div class="rr-header-label" style="font-family:'Tajawal',sans-serif!important;font-size:25px!important;font-weight:600!important;color:#1a252f!important;">طريقة الدفع</div>
-          <div class="rr-header-value" id="rr_method" style="font-family:'Tajawal',sans-serif!important;font-size:30px!important;font-weight:900!important;color:#111c23!important;">نقدا</div>
+      <div id="r-receipt" style="width:min(500px,100%);background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 28px rgba(0,0,0,0.11);font-family:'Tajawal',sans-serif;direction:rtl;">
+
+        <!-- Header -->
+        <div style="background:#fff;margin:18px 18px 0;border-radius:12px;border:1.5px solid #dde6ec;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="color:#1a252f;font-size:25px;font-weight:600;font-family:'Tajawal',sans-serif;">طريقة الدفع</div>
+          <div id="rr_method" style="color:#111c23;font-size:30px;font-weight:900;font-family:'Tajawal',sans-serif;">نقدا</div>
         </div>
-        <div class="rr-body">
-          <div class="rr-card">
-            <div class="rr-card-title" style="font-family:'Tajawal',sans-serif!important;font-size:21px!important;font-weight:700!important;color:#111c23!important;text-align:center!important;">التفاصيل</div>
-            <div class="rr-card-bignum" id="rr_bignum" style="font-family:'Roboto',sans-serif!important;font-size:27px!important;font-weight:900!important;color:#111c23!important;text-align:center!important;direction:ltr!important;">—</div>
-            <div class="rr-row">
-              <div class="rr-row-label" style="font-family:'Tajawal',sans-serif!important;font-size:20px!important;font-weight:700!important;color:#0e5f78!important;">القيمة المستحقة</div>
-              <div class="rr-row-val" id="rr_amount" style="font-family:'Roboto',sans-serif!important;font-size:20px!important;font-weight:700!important;color:#0e5f78!important;direction:ltr!important;text-align:left!important;">EGP 0.00</div>
+
+        <!-- Body Card -->
+        <div style="background:#fff;padding:14px 18px 6px;">
+          <div style="background:#fff;border-radius:12px;border:1.5px solid #dde6ec;padding:18px 24px 16px;">
+            <div style="text-align:center;color:#111c23;font-size:21px;font-weight:700;margin-bottom:8px;font-family:'Tajawal',sans-serif;">التفاصيل</div>
+            <div id="rr_bignum" style="text-align:center;color:#111c23;font-size:27px;font-weight:900;letter-spacing:0.5px;margin-bottom:14px;direction:ltr;font-family:'Roboto',sans-serif;">—</div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:6px 0;">
+              <div style="color:#0e5f78;font-size:20px;font-weight:700;font-family:'Tajawal',sans-serif;text-align:right;">القيمة المستحقة</div>
+              <div id="rr_amount" style="color:#0e5f78;font-size:20px;font-weight:700;font-family:'Roboto',sans-serif;direction:ltr;text-align:left;">EGP 0.00</div>
             </div>
-            <div class="rr-row">
-              <div class="rr-row-label" id="rr_reg_key" style="font-family:'Tajawal',sans-serif!important;font-size:20px!important;font-weight:700!important;color:#0e5f78!important;">—</div>
-              <div class="rr-row-val" id="rr_reg_val" style="font-family:'Roboto',sans-serif!important;font-size:20px!important;font-weight:700!important;color:#0e5f78!important;direction:ltr!important;">—</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:6px 0;">
+              <div id="rr_reg_key" style="color:#0e5f78;font-size:20px;font-weight:700;font-family:'Roboto',sans-serif;direction:ltr;text-align:right;">—</div>
+              <div id="rr_reg_val" style="color:#0e5f78;font-size:20px;font-weight:700;font-family:'Roboto',sans-serif;direction:ltr;text-align:left;">—</div>
             </div>
-            <div class="rr-row">
-              <div class="rr-row-label" style="font-family:'Tajawal',sans-serif!important;font-size:20px!important;font-weight:700!important;color:#0e5f78!important;">رقم التسجيل</div>
-              <div class="rr-row-val" id="rr_reg" style="font-family:'Roboto',sans-serif!important;font-size:20px!important;font-weight:700!important;color:#0e5f78!important;direction:ltr!important;">—</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:6px 0;">
+              <div style="color:#0e5f78;font-size:20px;font-weight:700;font-family:'Tajawal',sans-serif;text-align:right;">رقم التسجيل</div>
+              <div id="rr_reg" style="color:#0e5f78;font-size:20px;font-weight:700;font-family:'Roboto',sans-serif;direction:ltr;text-align:left;">—</div>
             </div>
-            <div class="rr-payfor" style="font-family:'Tajawal',sans-serif;font-size:20px;font-weight:600;color:#111c23;text-align:center;margin-top:14px;padding-top:14px;border-top:1.5px solid #dde6ec;">
+
+            <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid #dde6ec;text-align:center;color:#111c23;font-size:20px;font-weight:600;line-height:1.7;font-family:'Tajawal',sans-serif;">
               Payment for<br>
-              <span class="rr-payfor-line2" id="rr_payfor_code" style="font-family:'Roboto',sans-serif;font-size:20px;font-weight:800;color:#111c23;direction:ltr;display:block;text-align:center;">—</span>
+              <span id="rr_payfor_code" style="display:block;font-size:20px;font-weight:800;color:#111c23;direction:ltr;text-align:center;font-family:'Roboto',sans-serif;">—</span>
             </div>
           </div>
         </div>
-        <div class="rr-divider"></div>
-        <div class="rr-details">
-          <div class="rr-detail-row">
-            <div class="rr-detail-label" style="font-family:'Tajawal',sans-serif!important;font-size:20px!important;font-weight:700!important;color:#0e5f78!important;">تاريخ الإصدار</div>
-            <div class="rr-detail-val" id="rr_issue" style="font-family:'Roboto',sans-serif!important;font-size:20px!important;font-weight:700!important;color:#0e5f78!important;direction:ltr!important;">—</div>
+
+        <!-- Divider -->
+        <div style="height:1.5px;background:#dde6ec;"></div>
+
+        <!-- Details -->
+        <div style="padding:4px 42px 0;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:13px 0;border-bottom:1.5px solid #edf2f6;">
+            <div style="color:#0e5f78;font-size:20px;font-weight:700;font-family:'Tajawal',sans-serif;text-align:right;">تاريخ الإصدار</div>
+            <div id="rr_issue" style="color:#0e5f78;font-size:20px;font-weight:700;font-family:'Roboto',sans-serif;direction:ltr;text-align:left;">—</div>
           </div>
-          <div class="rr-detail-row">
-            <div class="rr-detail-label" style="font-family:'Tajawal',sans-serif!important;font-size:20px!important;font-weight:700!important;color:#0e5f78!important;">تاريخ الانتهاء</div>
-            <div class="rr-detail-val" id="rr_expire" style="font-family:'Roboto',sans-serif!important;font-size:20px!important;font-weight:700!important;color:#0e5f78!important;direction:ltr!important;">—</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:13px 0;border-bottom:1.5px solid #edf2f6;">
+            <div style="color:#0e5f78;font-size:20px;font-weight:700;font-family:'Tajawal',sans-serif;text-align:right;">تاريخ الانتهاء</div>
+            <div id="rr_expire" style="color:#0e5f78;font-size:20px;font-weight:700;font-family:'Roboto',sans-serif;direction:ltr;text-align:left;">—</div>
           </div>
-          <div class="rr-detail-row">
-            <div class="rr-detail-label" style="font-family:'Tajawal',sans-serif!important;font-size:20px!important;font-weight:700!important;color:#0e5f78!important;">مبلغ العملية</div>
-            <div class="rr-detail-val" id="rr_op" style="font-family:'Roboto',sans-serif!important;font-size:20px!important;font-weight:700!important;color:#0e5f78!important;direction:ltr!important;">EGP 0.00</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:13px 0;border-bottom:1.5px solid #edf2f6;">
+            <div style="color:#0e5f78;font-size:20px;font-weight:700;font-family:'Tajawal',sans-serif;text-align:right;">مبلغ العملية</div>
+            <div id="rr_op" style="color:#0e5f78;font-size:20px;font-weight:700;font-family:'Roboto',sans-serif;direction:ltr;text-align:left;">EGP 0.00</div>
           </div>
-          <div class="rr-detail-row">
-            <div class="rr-detail-label" style="font-family:'Tajawal',sans-serif!important;font-size:20px!important;font-weight:700!important;color:#0e5f78!important;">تكلفة الخدمة</div>
-            <div class="rr-detail-val" id="rr_fee" style="font-family:'Roboto',sans-serif!important;font-size:20px!important;font-weight:700!important;color:#0e5f78!important;direction:ltr!important;">EGP 0.00</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:13px 0;">
+            <div style="color:#0e5f78;font-size:20px;font-weight:700;font-family:'Tajawal',sans-serif;text-align:right;">تكلفة الخدمة</div>
+            <div id="rr_fee" style="color:#0e5f78;font-size:20px;font-weight:700;font-family:'Roboto',sans-serif;direction:ltr;text-align:left;">EGP 0.00</div>
           </div>
         </div>
-        <div class="rr-total">
-          <div class="rr-total-label" style="font-family:'Tajawal',sans-serif!important;font-size:21px!important;font-weight:900!important;color:#083d50!important;">المبلغ الكلي</div>
-          <div class="rr-total-val" id="rr_total" style="font-family:'Roboto',sans-serif!important;font-size:21px!important;font-weight:900!important;color:#083d50!important;direction:ltr!important;">EGP 0.00</div>
+
+        <!-- Total -->
+        <div style="padding:16px 42px 22px;border-top:1.5px solid #dde6ec;display:grid;grid-template-columns:1fr 1fr;align-items:center;">
+          <div style="color:#083d50;font-size:21px;font-weight:900;font-family:'Tajawal',sans-serif;text-align:right;">المبلغ الكلي</div>
+          <div id="rr_total" style="color:#083d50;font-size:21px;font-weight:900;font-family:'Roboto',sans-serif;direction:ltr;text-align:left;">EGP 0.00</div>
         </div>
+
       </div>
     </div>
   </div>
