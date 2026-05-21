@@ -1579,8 +1579,9 @@ window.showPage=function(id){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById(id)?.classList.add('active');
   if(id !== 'pg-chat') chatPageOpen = false;
-  const pages=['pg-dash','pg-form','pg-import','pg-records','pg-late','pg-dup','pg-audit','pg-report','pg-backup','pg-receipts'];
-  const i=pages.indexOf(id);if(i>=0)document.querySelectorAll('.nav-tab')[i]?.classList.add('active');
+  // Use data-page attribute to find correct nav tab
+  const activeTab = document.querySelector('.nav-tab[data-page="'+id+'"]');
+  if(activeTab) activeTab.classList.add('active');
   const fn={'pg-dash':refreshAll,'pg-records':()=>renderTable(true),'pg-late':renderLate,
     'pg-dup':renderDups,'pg-audit':renderAudit,'pg-report':generateReport,'pg-backup':renderTeamPage,'pg-team':renderTeamPage,
     'pg-chat':()=>{
