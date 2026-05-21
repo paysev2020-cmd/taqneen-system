@@ -1732,17 +1732,19 @@ function startTeamListener() {
   // استمع لـ visitors — وأطلق إشعار لما يجي حد جديد
   try {
     onSnapshot(collection(db,'visitors'), snap => {
+      const isFirstLoad = _knownVisitors.size === 0 && !window._visitorsInitialized;
       snap.docChanges().forEach(change => {
         if(change.type === 'added' && can.manage()) {
           const data = change.doc.data();
           const vid = change.doc.id;
-          // تجاهل اللي كانوا موجودين قبل الـ listener
-          if(_knownVisitors.size > 0 && !_knownVisitors.has(vid)) {
+          // بعت إشعار بس لو مش أول تحميل ومش موجود قبل كده
+          if(!isFirstLoad && !_knownVisitors.has(vid)) {
             showVisitorNotif(data.email || vid, data.name || '');
           }
           _knownVisitors.add(vid);
         }
       });
+      window._visitorsInitialized = true;
       visitorsSnap = snap.docs.map(d => ({_docId: d.id, _src:'visitors', role:'viewer', addedBy:'auto', ...d.data()}));
       mergeAndUpdate();
     });
