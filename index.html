@@ -3423,13 +3423,13 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   padding: 6px 0;
 }
 #r-receipt .rr-row-label {
-  color: #0e5f78;
+  color: #0a4d63;
   font-size: 20px;
   font-weight: 700;
   font-family: 'Tajawal', sans-serif;
 }
 #r-receipt .rr-row-val {
-  color: #0e5f78;
+  color: #0a4d63;
   font-size: 20px;
   font-weight: 700;
   direction: ltr;
@@ -3467,13 +3467,13 @@ body.dark #actions-menu button:hover{background:#263238!important;}
 }
 #r-receipt .rr-detail-row:last-child { border-bottom: none; }
 #r-receipt .rr-detail-label {
-  color: #0e5f78;
+  color: #0a4d63;
   font-size: 20px;
   font-weight: 700;
   font-family: 'Tajawal', sans-serif;
 }
 #r-receipt .rr-detail-val {
-  color: #0e5f78;
+  color: #0a4d63;
   font-size: 20px;
   font-weight: 700;
   direction: ltr;
@@ -3487,17 +3487,30 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   align-items: center;
 }
 #r-receipt .rr-total-label {
-  color: #083d50;
+  color: #062f3d;
   font-size: 21px;
   font-weight: 900;
   font-family: 'Tajawal', sans-serif;
 }
 #r-receipt .rr-total-val {
-  color: #083d50;
+  color: #062f3d;
   font-size: 21px;
   font-weight: 900;
   direction: ltr;
   font-family: 'Roboto', sans-serif;
+}
+/* ══ Receipt column alignment ══ */
+#r-receipt .rr-row-label,
+#r-receipt .rr-detail-label,
+#r-receipt .rr-total-label {
+  min-width: 45%;
+  text-align: right;
+}
+#r-receipt .rr-row-val,
+#r-receipt .rr-detail-val,
+#r-receipt .rr-total-val {
+  min-width: 45%;
+  text-align: left;
 }
 /* Receipt Log */
 .r-log-wrap { flex:1; padding:16px; overflow-y:auto; background:#e9eef3; width:100%; }
