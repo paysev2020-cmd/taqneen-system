@@ -3447,8 +3447,8 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   font-family: 'Roboto', sans-serif !important;
 }
 #r-receipt .rr-row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
   padding: 6px 0;
 }
@@ -3457,8 +3457,8 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   font-size: 20px;
   font-weight: 700;
   font-family: 'Tajawal', sans-serif !important;
-  min-width: 160px;
   text-align: right;
+  padding-right: 8px;
 }
 #r-receipt .rr-row-val {
   color: #0e5f78;
@@ -3467,7 +3467,7 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   direction: ltr;
   text-align: left;
   font-family: 'Roboto', sans-serif !important;
-  min-width: 160px;
+  padding-left: 8px;
 }
 #r-receipt .rr-payfor {
   margin-top: 14px;
@@ -3497,8 +3497,8 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   padding: 4px 42px 0;
 }
 #r-receipt .rr-detail-row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
   padding: 13px 0;
   border-bottom: 1.5px solid #edf2f6;
@@ -3511,8 +3511,8 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   font-size: 20px;
   font-weight: 700;
   font-family: 'Tajawal', sans-serif !important;
-  min-width: 160px;
   text-align: right;
+  padding-right: 8px;
 }
 #r-receipt .rr-detail-val {
   color: #0e5f78;
@@ -3520,14 +3520,14 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   font-weight: 700;
   direction: ltr;
   font-family: 'Roboto', sans-serif !important;
-  min-width: 160px;
   text-align: left;
+  padding-left: 8px;
 }
 #r-receipt .rr-total {
   padding: 16px 42px 22px;
   border-top: 1.5px solid #dde6ec;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
 }
 #r-receipt .rr-total-label {
@@ -3535,8 +3535,8 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   font-size: 21px;
   font-weight: 900;
   font-family: 'Tajawal', sans-serif !important;
-  min-width: 160px;
   text-align: right;
+  padding-right: 8px;
 }
 #r-receipt .rr-total-val {
   color: #083d50;
@@ -3544,8 +3544,8 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   font-weight: 900;
   direction: ltr;
   font-family: 'Roboto', sans-serif !important;
-  min-width: 160px;
   text-align: left;
+  padding-left: 8px;
 }
 /* Receipt Log */
 .r-log-wrap { flex:1; padding:16px; overflow-y:auto; background:#e9eef3; width:100%; }
