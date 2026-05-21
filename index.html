@@ -673,7 +673,7 @@ window.printCard=function(docId){
   const checkSVG=`<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="30" height="30"><polyline points="20 6 9 17 4 12"/></svg>`;
   const row=(l,v)=>v?`<tr><td style="font-weight:700;padding:5px 10px;color:#1F4E79;border:1px solid #ddd;white-space:nowrap;width:140px;font-size:12px;">${l}</td><td style="padding:5px 10px;border:1px solid #ddd;font-size:12px;">${v}</td></tr>`:'';
   document.getElementById('printContent').innerHTML=`
-    <div style="font-family:'Segoe UI',Tahoma,Cairo,sans-serif;direction:rtl;max-width:500px;margin:0 auto;">
+    <div style="font-family:'Segoe UI',Tahoma,Tajawal,sans-serif;direction:rtl;max-width:500px;margin:0 auto;">
       <!-- بطاقة رقم التقنين -->
       <div style="background:#fff;border-radius:14px;padding:24px 20px 18px;text-align:center;border:1px solid #e0e0e0;margin-bottom:16px;">
         <div style="width:56px;height:56px;background:#1a7a4a;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;-webkit-print-color-adjust:exact;print-color-adjust:exact;">${checkSVG}</div>
@@ -736,7 +736,7 @@ window.printMultiple=function(){
   const row=(l,v)=>v?`<tr><td style="font-weight:700;padding:5px 10px;color:#1F4E79;border:1px solid #ddd;white-space:nowrap;width:140px;font-size:12px;">${l}</td><td style="padding:5px 10px;border:1px solid #ddd;font-size:12px;">${v}</td></tr>`:'';
   const cards=idxs.map(i=>{
     const r=records[i];
-    return `<div style="page-break-after:always;font-family:'Segoe UI',Tahoma,Cairo,sans-serif;direction:rtl;max-width:500px;margin:0 auto 0;">
+    return `<div style="page-break-after:always;font-family:'Segoe UI',Tahoma,Tajawal,sans-serif;direction:rtl;max-width:500px;margin:0 auto 0;">
       <!-- بطاقة رقم التقنين -->
       <div style="background:#fff;border-radius:14px;padding:24px 20px 18px;text-align:center;border:1px solid #e0e0e0;margin-bottom:16px;">
         <div style="width:56px;height:56px;background:#1a7a4a;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;-webkit-print-color-adjust:exact;print-color-adjust:exact;">${checkSVG}</div>
@@ -785,7 +785,7 @@ window.printMultiple=function(){
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head>
     <meta charset="UTF-8"><title>بطاقات التقنين</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
       body{font-family:'Tajawal',sans-serif;padding:20px;background:#fff;}
@@ -1484,7 +1484,7 @@ function renderCharts_(){
     chartStatus_=new Chart(ctxS,{type:'doughnut',data:{labels:['مكتمل','تقنين فقط','ناقص'],
       datasets:[{data:[complete,tqonly,pending],backgroundColor:['#375623','#C9A84C','#C00000'],borderWidth:3,borderColor:'#fff'}]},
       options:{responsive:true,maintainAspectRatio:true,
-        plugins:{legend:{position:'bottom',labels:{font:{family:'Cairo',size:11},padding:10}},
+        plugins:{legend:{position:'bottom',labels:{font:{family:'Tajawal',size:11},padding:10}},
           tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw} (${records.length?Math.round(ctx.raw/records.length*100):0}%)`}}}}});}
   const ctxW=document.getElementById('chart-weekly');
   if(ctxW){const days=[],counts=[];
@@ -1495,8 +1495,8 @@ function renderCharts_(){
     chartWeekly_=new Chart(ctxW,{type:'bar',data:{labels:days,
       datasets:[{label:'طلبات مضافة',data:counts,backgroundColor:'#2E75B6',borderRadius:6}]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-        scales:{y:{beginAtZero:true,ticks:{stepSize:1,font:{family:'Cairo'}}},
-          x:{ticks:{font:{family:'Cairo',size:10}}}}}});}
+        scales:{y:{beginAtZero:true,ticks:{stepSize:1,font:{family:'Tajawal'}}},
+          x:{ticks:{font:{family:'Tajawal',size:10}}}}}});}
 }
 
 // ══════════════════════════════════════════════
@@ -1683,7 +1683,7 @@ function showVisitorNotif(email, name) {
     background:linear-gradient(135deg,#1F4E79,#2E75B6);
     color:#fff;padding:14px 22px;border-radius:14px;
     box-shadow:0 8px 30px rgba(0,0,0,0.35);
-    z-index:9999;font-family:Cairo,sans-serif;font-size:13px;
+    z-index:9999;font-family:Tajawal,sans-serif;font-size:13px;
     display:flex;align-items:center;gap:12px;min-width:300px;
     animation:slideUpNotif 0.4s ease;cursor:pointer;`;
   notif.innerHTML = `
@@ -1696,7 +1696,7 @@ function showVisitorNotif(email, name) {
     <button onclick="showPage('pg-team');this.closest('[id^=visitor-notif]').remove();"
       style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);
       color:#fff;border-radius:8px;padding:5px 12px;cursor:pointer;
-      font-family:Cairo,sans-serif;font-size:12px;white-space:nowrap;">
+      font-family:Tajawal,sans-serif;font-size:12px;white-space:nowrap;">
       عرض ←
     </button>
     <span onclick="this.parentElement.remove()" style="opacity:0.6;cursor:pointer;font-size:18px;padding:0 4px;">✕</span>`;
@@ -1980,10 +1980,10 @@ window.printCardWindow=function(){
   const content=document.getElementById('printContent')?.innerHTML||'';
   const win=window.open('','_blank','width=700,height=900');
   win.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:Cairo,'Segoe UI',Tahoma,sans-serif;background:#fff;}
+    body{font-family:Tajawal,'Segoe UI',Tahoma,sans-serif;background:#fff;}
     .print-first-page{padding:10mm;max-width:190mm;margin:0 auto;}
     .photo-page{
       page-break-before:always;
@@ -2505,8 +2505,8 @@ window.printTableNow=function(){
   if(!table){showToast('❌ لا يوجد جدول');return;}
   var win=window.open('','_blank','width=900,height=700');
   win.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">'
-    +'<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">'
-    +'<style>*{box-sizing:border-box;}body{font-family:Cairo,sans-serif;padding:15mm;}'
+    +'<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">'
+    +'<style>*{box-sizing:border-box;}body{font-family:Tajawal,sans-serif;padding:15mm;}'
     +'h2{color:#1F4E79;margin-bottom:10px;font-size:16px;}p{font-size:11px;color:#666;margin-bottom:10px;}'
     +'table{width:100%;border-collapse:collapse;font-size:10px;}'
     +'th{background:#1F4E79;color:#fff;padding:6px 4px;text-align:right;}'
@@ -2980,8 +2980,8 @@ window.exportReportPDF=function(){
     ?('<div class="section"><div class="stitle">⚠️ المتأخرون ('+late.length+')</div><table><thead><tr><th>م</th><th>الاسم</th><th>الرقم القومي</th><th>تاريخ الإضافة</th><th>أيام</th></tr></thead><tbody>'+lateRows+'</tbody></table></div>')
     :'<div class="section"><div style="color:green;font-weight:700;">✅ لا يوجد متأخرون</div></div>';
   win.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">'
-    +'<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">'
-    +'<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Cairo,sans-serif;background:#f5f5f5;}'
+    +'<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Tajawal,sans-serif;background:#f5f5f5;}'
     +'.page{width:210mm;min-height:297mm;margin:0 auto;background:#fff;padding:16mm;}'
     +'.header{background:linear-gradient(135deg,#1F4E79,#2E75B6);color:#fff;padding:20px 24px;border-radius:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;}'
     +'.header h1{font-size:18px;font-weight:900;}.header .sub{font-size:12px;opacity:.8;margin-top:4px;}'
@@ -3031,7 +3031,7 @@ window.exportReportPDF=function(){
 
     <!-- زرار الدخول -->
     <div id="login-btn-wrap">
-      <button onclick="loginGoogle()" style="display:flex;align-items:center;gap:12px;background:#fff;border:2px solid #E0E0E0;border-radius:12px;padding:14px 28px;font-family:Cairo,sans-serif;font-size:15px;font-weight:700;color:#333;cursor:pointer;width:100%;justify-content:center;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+      <button onclick="loginGoogle()" style="display:flex;align-items:center;gap:12px;background:#fff;border:2px solid #E0E0E0;border-radius:12px;padding:14px 28px;font-family:Tajawal,sans-serif;font-size:15px;font-weight:700;color:#333;cursor:pointer;width:100%;justify-content:center;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
         <svg width="22" height="22" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.1 0 5.8 1.1 8 2.9l6-6C34.3 3.2 29.4 1 24 1 14.9 1 7.1 6.3 3.5 13.9l7 5.4C12.3 13.2 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.4 5.7c4.3-4 6.8-9.9 6.8-16.9z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7-5.4C1.7 17 1 20.4 1 24s.7 7 2.5 10.1l7-5.4z"/><path fill="#34A853" d="M24 47c5.4 0 10-1.8 13.3-4.8l-7.4-5.7c-1.9 1.3-4.3 2-5.9 2-6.3 0-11.7-4.2-13.5-9.8l-7 5.4C7.1 41.7 14.9 47 24 47z"/></svg>
         تسجيل الدخول بـ Google
       </button>
@@ -3052,7 +3052,7 @@ window.exportReportPDF=function(){
 <div id="app-screen" style="display:none;">
 
 <!-- DEV MODE WARNING -->
-<div id="dev-mode-banner" style="background:#856404;color:#fff;text-align:center;padding:8px;font-size:12px;font-weight:700;font-family:Cairo,sans-serif;">
+<div id="dev-mode-banner" style="background:#856404;color:#fff;text-align:center;padding:8px;font-size:12px;font-weight:700;font-family:Tajawal,sans-serif;">
   ⚠️ وضع التطوير مفعّل — أي حساب Google يقدر يدخل
 </div>
 
@@ -3069,7 +3069,7 @@ window.exportReportPDF=function(){
     <div style="background:#DEEAF1;border-radius:10px;padding:12px 16px;font-size:12px;color:#1F4E79;margin-bottom:20px;">
       📧 <strong id="waiting-email"></strong>
     </div>
-    <button onclick="logout()" style="background:#C00000;color:#fff;border:none;border-radius:10px;padding:12px 28px;font-family:Cairo,sans-serif;font-size:14px;font-weight:700;cursor:pointer;">
+    <button onclick="logout()" style="background:#C00000;color:#fff;border:none;border-radius:10px;padding:12px 28px;font-family:Tajawal,sans-serif;font-size:14px;font-weight:700;cursor:pointer;">
       🚪 تسجيل الخروج
     </button>
   </div>
@@ -3100,7 +3100,7 @@ window.exportReportPDF=function(){
           <div style="font-size:10px;color:rgba(255,255,255,0.6);" id="user-email"></div>
         </div>
         <span id="user-role-badge" style="background:var(--gold);color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;"></span>
-        <button onclick="logout()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font-family:Cairo,sans-serif;font-size:11px;">خروج</button>
+        <button onclick="logout()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font-family:Tajawal,sans-serif;font-size:11px;">خروج</button>
       </div>
     </div>
   </div>
@@ -3124,13 +3124,13 @@ window.exportReportPDF=function(){
 <!-- The JS above handles all logic; HTML below is presentation only -->
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;600;700;900&display=swap');
 @keyframes pulse-badge{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.7;transform:scale(1.15);}}
 @keyframes slideUpNotif{from{opacity:0;transform:translateX(-50%) translateY(30px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
 @keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--navy:#1F4E79;--blue:#2E75B6;--sky:#DEEAF1;--green:#375623;--mint:#E2EFDA;--gold:#C9A84C;--orange:#D46B08;--red:#C00000;--purple:#6B3FA0;--light:#F5F8FB;--white:#FFFFFF;--border:#C8D8E8;--text:#1a2a3a;--muted:#6B7C8D;--radius:10px;--shadow:0 4px 20px rgba(31,78,121,0.10);}
-body{font-family:'Cairo',sans-serif;background:linear-gradient(135deg,#e8f2fc 0%,#f0f7ee 100%);min-height:100vh;color:var(--text);}
+body{font-family:'Tajawal',sans-serif;background:linear-gradient(135deg,#e8f2fc 0%,#f0f7ee 100%);min-height:100vh;color:var(--text);}
 .app-header{background:linear-gradient(120deg,var(--navy) 0%,var(--blue) 100%);padding:0 24px;box-shadow:0 4px 20px rgba(31,78,121,0.3);position:sticky;top:0;z-index:200;}
 .app-header-top{display:flex;align-items:center;gap:16px;padding:14px 0 0;justify-content:space-between;}
 .app-title{font-size:18px;font-weight:900;color:#fff;}.app-subtitle{font-size:11px;color:rgba(255,255,255,0.65);}
@@ -3138,7 +3138,7 @@ body{font-family:'Cairo',sans-serif;background:linear-gradient(135deg,#e8f2fc 0%
 .hbadge{background:rgba(255,255,255,0.15);color:#fff;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;}
 .hbadge.warn{background:rgba(212,107,8,0.8);}
 .nav-tabs{display:flex;gap:0;margin-top:10px;overflow-x:auto;}
-.nav-tab{padding:10px 16px;cursor:pointer;font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s;background:none;border-left:none;border-right:none;border-top:none;font-family:'Cairo',sans-serif;}
+.nav-tab{padding:10px 16px;cursor:pointer;font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s;background:none;border-left:none;border-right:none;border-top:none;font-family:'Tajawal',sans-serif;}
 .nav-tab:hover{color:#fff;}.nav-tab.active{color:#fff;border-bottom-color:var(--gold);}
 .page{display:none;padding:20px 16px 80px;}.page.active{display:block;}
 .card{background:var(--white);border-radius:14px;box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden;}
@@ -3153,24 +3153,24 @@ body{font-family:'Cairo',sans-serif;background:linear-gradient(135deg,#e8f2fc 0%
 .progress-bar{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--green),#4CAF50);transition:width .7s ease;}
 .filter-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:12px 18px;background:var(--sky);border-bottom:1px solid var(--border);}
 .filter-bar label{font-size:12px;font-weight:700;color:var(--navy);}
-.filter-bar select,.filter-bar input[type=text],.filter-bar input[type=number]{border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'Cairo',sans-serif;font-size:12px;background:#fff;color:var(--text);outline:none;}
+.filter-bar select,.filter-bar input[type=text],.filter-bar input[type=number]{border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'Tajawal',sans-serif;font-size:12px;background:#fff;color:var(--text);outline:none;}
 .grid{display:grid;gap:14px;}.g2{grid-template-columns:1fr 1fr;}.g3{grid-template-columns:1fr 1fr 1fr;}.span2{grid-column:span 2;}.span3{grid-column:span 3;}
 .field{display:flex;flex-direction:column;gap:5px;}.field label{font-size:11px;font-weight:700;color:var(--navy);}.field label .req{color:var(--red);margin-right:2px;}
-input[type=text],input[type=tel],input[type=date],input[type=number],textarea,select.field-select{width:100%;border:1.5px solid var(--border);border-radius:var(--radius);padding:9px 12px;font-family:'Cairo',sans-serif;font-size:13px;color:var(--text);background:var(--light);transition:border-color .2s,box-shadow .2s;direction:rtl;outline:none;}
+input[type=text],input[type=tel],input[type=date],input[type=number],textarea,select.field-select{width:100%;border:1.5px solid var(--border);border-radius:var(--radius);padding:9px 12px;font-family:'Tajawal',sans-serif;font-size:13px;color:var(--text);background:var(--light);transition:border-color .2s,box-shadow .2s;direction:rtl;outline:none;}
 input:focus,textarea:focus,select.field-select:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px rgba(46,117,182,0.12);}
 textarea{resize:vertical;min-height:55px;line-height:1.6;}input.num{direction:ltr;text-align:left;font-size:12px;}input[readonly]{background:#f0f0f0;}
 .status-badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap;}
 .s-complete{background:var(--mint);color:var(--green);}.s-tqonly{background:#FFF3CD;color:#856404;}.s-pending{background:#FDE8E8;color:var(--red);}
 .paste-zone{border:2.5px dashed var(--blue);border-radius:14px;padding:18px 20px;background:var(--sky);margin-bottom:20px;}
 .paste-zone h3{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:5px;}.paste-zone p{font-size:11px;color:var(--muted);margin-bottom:8px;}
-#pasteInput{width:100%;height:80px;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'Cairo',sans-serif;font-size:12px;background:#fff;resize:none;direction:ltr;outline:none;}
+#pasteInput{width:100%;height:80px;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'Tajawal',sans-serif;font-size:12px;background:#fff;resize:none;direction:ltr;outline:none;}
 .import-zone{border:2.5px dashed var(--purple);border-radius:14px;padding:20px;background:#f8f0ff;margin-bottom:20px;text-align:center;}
 .import-zone h3{font-size:14px;font-weight:700;color:var(--purple);margin-bottom:6px;}.import-zone p{font-size:12px;color:var(--muted);margin-bottom:12px;}
 #importFile,#importXlsFile{display:none;}
-.import-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:var(--purple);color:#fff;border:none;border-radius:10px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
+.import-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:var(--purple);color:#fff;border:none;border-radius:10px;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
 .import-btn:hover{opacity:.88;transform:translateY(-1px);}
 .btn-bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
-.btn{display:flex;align-items:center;gap:7px;padding:9px 20px;border-radius:10px;border:none;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn{display:flex;align-items:center;gap:7px;padding:9px 20px;border-radius:10px;border:none;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
 .btn-sm{padding:6px 13px;font-size:11px;}.btn-xs{padding:4px 10px;font-size:10px;}
 .btn-primary{background:var(--navy);color:#fff;}.btn-primary:hover{background:#163a5c;transform:translateY(-1px);}
 .btn-success{background:var(--green);color:#fff;}.btn-success:hover{background:#264318;}
@@ -3207,7 +3207,7 @@ tbody td{padding:7px;text-align:center;border:1px solid var(--border);white-spac
 .print-bar{display:none;align-items:center;gap:12px;padding:10px 18px;background:linear-gradient(90deg,var(--navy),var(--blue));flex-wrap:wrap;}
 .print-bar.show{display:flex;}.print-bar-txt{color:#fff;font-size:13px;font-weight:700;}
 .pagination{display:flex;align-items:center;gap:6px;justify-content:center;padding:12px;}
-.pg-btn{background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:5px 12px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;color:var(--navy);}
+.pg-btn{background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:5px 12px;font-family:'Tajawal',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;color:var(--navy);}
 .pg-btn:hover{background:var(--sky);}.pg-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}.pg-btn:disabled{opacity:.4;cursor:default;}
 .pg-info{font-size:12px;color:var(--muted);font-weight:600;}
 .audit-entry{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:11px;flex-wrap:wrap;}
@@ -3224,7 +3224,7 @@ tbody td{padding:7px;text-align:center;border:1px solid var(--border);white-spac
 .dup-warning strong{color:var(--red);}
 .undo-toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(80px);background:#333;color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.22);transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;pointer-events:none;z-index:9998;display:flex;align-items:center;gap:12px;}
 .undo-toast.show{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:all;}
-.undo-btn{background:var(--gold);color:#fff;border:none;border-radius:6px;padding:4px 12px;font-family:Cairo,sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+.undo-btn{background:var(--gold);color:#fff;border:none;border-radius:6px;padding:4px 12px;font-family:Tajawal,sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(90px);background:var(--navy);color:#fff;padding:12px 28px;border-radius:12px;font-size:13px;font-weight:700;box-shadow:0 8px 30px rgba(0,0,0,0.22);transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .3s;opacity:0;pointer-events:none;white-space:nowrap;z-index:9999;}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
 #scrollTop{position:fixed;bottom:24px;left:24px;width:42px;height:42px;border-radius:50%;background:var(--navy);color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:0 4px 16px rgba(31,78,121,0.3);display:none;align-items:center;justify-content:center;z-index:400;transition:all .2s;}
@@ -3313,9 +3313,9 @@ body.dark #actions-menu button:hover{background:#263238!important;}
 .comment-bubble .c-text{font-size:12px;color:var(--text);margin-top:2px;line-height:1.5;}
 .comment-bubble .c-time{font-size:10px;color:var(--muted);margin-top:3px;}
 .comment-input-wrap{display:flex;gap:8px;margin-top:10px;}
-.comment-input-wrap input{flex:1;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-family:Cairo,sans-serif;font-size:12px;outline:none;}
+.comment-input-wrap input{flex:1;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-family:Tajawal,sans-serif;font-size:12px;outline:none;}
 .comment-input-wrap input:focus{border-color:var(--blue);}
-.comment-input-wrap button{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:Cairo,sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.comment-input-wrap button{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:Tajawal,sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
 
 /* ══ PDF REPORT ══ */
 .pdf-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;}
@@ -3867,13 +3867,13 @@ body.r-dark-mode #pg-receipts .r-filter-bar select { background:#263238; border-
           ⚡ إجراءات <span style="font-size:10px;">▼</span>
         </button>
         <div id="actions-menu" style="display:none;position:absolute;left:0;top:110%;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.15);min-width:180px;z-index:999;overflow:hidden;">
-          <button onclick="exportExcel();document.getElementById('actions-menu').classList.remove('open-menu')" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:var(--text);">⬇️ Excel الرئيسي</button>
-          <button onclick="exportFiltered();document.getElementById('actions-menu').classList.remove('open-menu')" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">⬇️ Excel المفلتر</button>
-          <button onclick="exportSelectedExcel();document.getElementById('actions-menu').classList.remove('open-menu')" id="export-sel-btn" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:none;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">⬇️ Excel المحددين</button>
-          <button onclick="window.exportText('all');document.getElementById('actions-menu').classList.remove('open-menu')" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">📄 نص الكل</button>
-          <button onclick="window.exportText('selected');document.getElementById('actions-menu').classList.remove('open-menu')" id="export-txt-sel-btn" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:none;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">📄 نص المحددين</button>
-          <button onclick="printTableNow();document.getElementById('actions-menu').classList.remove('open-menu')" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">🖨️ طباعة الجدول</button>
-          <button onclick="clearAll();document.getElementById('actions-menu').classList.remove('open-menu')" data-role="admin" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Cairo,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:#C00000;border-top:1px solid var(--border);">🗑️ حذف الكل</button>
+          <button onclick="exportExcel();document.getElementById('actions-menu').classList.remove('open-menu')" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Tajawal,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:var(--text);">⬇️ Excel الرئيسي</button>
+          <button onclick="exportFiltered();document.getElementById('actions-menu').classList.remove('open-menu')" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Tajawal,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">⬇️ Excel المفلتر</button>
+          <button onclick="exportSelectedExcel();document.getElementById('actions-menu').classList.remove('open-menu')" id="export-sel-btn" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Tajawal,sans-serif;font-size:13px;text-align:right;display:none;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">⬇️ Excel المحددين</button>
+          <button onclick="window.exportText('all');document.getElementById('actions-menu').classList.remove('open-menu')" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Tajawal,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">📄 نص الكل</button>
+          <button onclick="window.exportText('selected');document.getElementById('actions-menu').classList.remove('open-menu')" id="export-txt-sel-btn" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Tajawal,sans-serif;font-size:13px;text-align:right;display:none;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">📄 نص المحددين</button>
+          <button onclick="printTableNow();document.getElementById('actions-menu').classList.remove('open-menu')" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Tajawal,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:var(--text);border-top:1px solid var(--border);">🖨️ طباعة الجدول</button>
+          <button onclick="clearAll();document.getElementById('actions-menu').classList.remove('open-menu')" data-role="admin" style="width:100%;padding:10px 16px;border:none;background:none;cursor:pointer;font-family:Tajawal,sans-serif;font-size:13px;text-align:right;display:flex;align-items:center;gap:8px;color:#C00000;border-top:1px solid var(--border);">🗑️ حذف الكل</button>
           <div style="padding:8px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;">
             <label style="font-size:12px;font-weight:700;color:var(--navy);">صفوف:</label>
             <select id="page-size" onchange="renderTable(true)" style="border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;flex:1;"><option value="25">25</option><option value="50">50</option><option value="100">100</option><option value="9999">الكل</option></select>
@@ -3998,8 +3998,8 @@ body.r-dark-mode #pg-receipts .r-filter-bar select { background:#263238; border-
       <div style="text-align:center;color:var(--muted);font-size:12px;padding:20px;">جارى التحميل...</div>
     </div>
     <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;background:#fff;">
-      <input type="text" id="chat-input" placeholder="اكتب رسالة..." style="flex:1;border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-family:Cairo,sans-serif;font-size:13px;outline:none;" onkeypress="if(event.key==='Enter')sendChatMsg()">
-      <button onclick="sendChatMsg()" style="background:var(--navy);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-family:Cairo,sans-serif;font-size:13px;font-weight:700;cursor:pointer;">إرسال ➤</button>
+      <input type="text" id="chat-input" placeholder="اكتب رسالة..." style="flex:1;border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-family:Tajawal,sans-serif;font-size:13px;outline:none;" onkeypress="if(event.key==='Enter')sendChatMsg()">
+      <button onclick="sendChatMsg()" style="background:var(--navy);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-family:Tajawal,sans-serif;font-size:13px;font-weight:700;cursor:pointer;">إرسال ➤</button>
     </div>
   </div>
 </div>
@@ -4961,10 +4961,10 @@ window.rDoExportPdf = function(){
 <head>
 <meta charset="UTF-8">
 <title>تقرير الإيصالات — ${periodLabels[_rPdfPeriod]}</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:'Cairo',sans-serif;background:#fff;padding:15mm;direction:rtl;}
+  body{font-family:'Tajawal',sans-serif;background:#fff;padding:15mm;direction:rtl;}
   .header{background:linear-gradient(135deg,#0e5f78,#2a9db8);color:#fff;padding:20px 24px;border-radius:10px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
   .header h1{font-size:18px;font-weight:900;}
   .header .sub{font-size:12px;opacity:.8;margin-top:4px;}
@@ -5009,8 +5009,8 @@ window.rDoExportPdf = function(){
 </table>
 <div class="footer">نظام إيصالات فوري — ${dateStr} — إجمالي ${log.length} إيصال</div>
 <div class="no-print" style="text-align:center;margin-top:20px;">
-  <button onclick="window.print()" style="background:#0e5f78;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-left:10px;">🖨️ طباعة / حفظ PDF</button>
-  <button onclick="window.close()" style="background:#e74c3c;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-family:'Cairo',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">✕ إغلاق</button>
+  <button onclick="window.print()" style="background:#0e5f78;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-left:10px;">🖨️ طباعة / حفظ PDF</button>
+  <button onclick="window.close()" style="background:#e74c3c;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">✕ إغلاق</button>
 </div>
 <script>
   // Auto trigger print dialog
