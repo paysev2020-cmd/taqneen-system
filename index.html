@@ -786,6 +786,17 @@ window.printMultiple=function(){
     <style>
       body{font-family:Cairo,sans-serif;padding:20px;background:#fff;}
       @media print{@page{size:A4;margin:15mm;}body{padding:0;}}
+      /* Receipt font override - must be in head to take effect */
+      #r-receipt, #r-receipt *:not(.rr-row-val):not(.rr-detail-val):not(.rr-total-val):not(.rr-card-bignum):not(.rr-payfor-line2) {
+        font-family: 'Tajawal', sans-serif !important;
+      }
+      #r-receipt .rr-row-val,
+      #r-receipt .rr-detail-val,
+      #r-receipt .rr-total-val,
+      #r-receipt .rr-card-bignum,
+      #r-receipt .rr-payfor-line2 {
+        font-family: 'Roboto', sans-serif !important;
+      }
     </style>
     </head><body>${cards}<script>window.onload=()=>window.print();<\/script>
 
@@ -3666,11 +3677,11 @@ body.dark #pg-receipts #r-receipt { background:#fff; }
   .r-form-panel { width:100%; min-width:0; }
   .r-preview-panel { padding:16px 10px; }
   #r-receipt { width:100%; }
-  .rr-header-label { font-size:18px; }
-  .rr-header-value { font-size:22px; }
-  .rr-detail-label, .rr-detail-val { font-size:16px; }
-  .rr-details { padding:4px 22px 0; }
-  .rr-total { padding:12px 22px 18px; }
+  #r-receipt .rr-header-label { font-size:20px; font-family:'Tajawal',sans-serif !important; }
+  #r-receipt .rr-header-value { font-size:24px; font-family:'Tajawal',sans-serif !important; }
+  #r-receipt .rr-detail-label, #r-receipt .rr-detail-val { font-size:17px; }
+  #r-receipt .rr-details { padding:4px 22px 0; }
+  #r-receipt .rr-total { padding:12px 22px 18px; }
 }
 
 
