@@ -3367,6 +3367,19 @@ body.dark #actions-menu button:hover{background:#263238!important;}
 
 /* The Receipt itself */
 #r-receipt { width: min(500px,100%); background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 28px rgba(0,0,0,0.11); font-family: 'Tajawal', sans-serif; direction: rtl; }
+#r-receipt {
+  width: min(500px, 100%);
+  background: #ffffff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 28px rgba(0,0,0,0.11);
+  font-family: 'Tajawal', sans-serif !important;
+  direction: rtl;
+}
+#r-receipt * {
+  font-family: 'Tajawal', sans-serif;
+  box-sizing: border-box;
+}
 #r-receipt .rr-header {
   background: #ffffff;
   margin: 18px 18px 0;
@@ -3381,13 +3394,13 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   color: #1a252f;
   font-size: 25px;
   font-weight: 600;
-  font-family: 'Tajawal', sans-serif;
+  font-family: 'Tajawal', sans-serif !important;
 }
 #r-receipt .rr-header-value {
   color: #111c23;
   font-size: 30px;
   font-weight: 900;
-  font-family: 'Tajawal', sans-serif;
+  font-family: 'Tajawal', sans-serif !important;
 }
 #r-receipt .rr-body {
   background: #ffffff;
@@ -3398,7 +3411,6 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   border-radius: 12px;
   border: 1.5px solid #dde6ec;
   padding: 18px 24px 16px;
-  margin: 0;
 }
 #r-receipt .rr-card-title {
   text-align: center;
@@ -3406,7 +3418,7 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   font-size: 21px;
   font-weight: 700;
   margin-bottom: 8px;
-  font-family: 'Tajawal', sans-serif;
+  font-family: 'Tajawal', sans-serif !important;
 }
 #r-receipt .rr-card-bignum {
   text-align: center;
@@ -3416,7 +3428,7 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   letter-spacing: 0.5px;
   margin-bottom: 14px;
   direction: ltr;
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Roboto', sans-serif !important;
 }
 #r-receipt .rr-row {
   display: flex;
@@ -3425,18 +3437,21 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   padding: 6px 0;
 }
 #r-receipt .rr-row-label {
-  color: #0a4d63;
+  color: #0e5f78;
   font-size: 20px;
   font-weight: 700;
-  font-family: 'Tajawal', sans-serif;
+  font-family: 'Tajawal', sans-serif !important;
+  flex: 1;
+  text-align: right;
 }
 #r-receipt .rr-row-val {
-  color: #0a4d63;
+  color: #0e5f78;
   font-size: 20px;
   font-weight: 700;
   direction: ltr;
   text-align: left;
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Roboto', sans-serif !important;
+  flex: 1;
 }
 #r-receipt .rr-payfor {
   margin-top: 14px;
@@ -3447,7 +3462,7 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   font-size: 20px;
   font-weight: 600;
   line-height: 1.7;
-  font-family: 'Tajawal', sans-serif;
+  font-family: 'Tajawal', sans-serif !important;
 }
 #r-receipt .rr-payfor-line2 {
   display: block;
@@ -3456,10 +3471,15 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   color: #111c23;
   direction: ltr;
   text-align: center;
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Roboto', sans-serif !important;
 }
-#r-receipt .rr-divider { height: 1.5px; background: #dde6ec; margin: 0; }
-#r-receipt .rr-details { padding: 4px 42px 0; }
+#r-receipt .rr-divider {
+  height: 1.5px;
+  background: #dde6ec;
+}
+#r-receipt .rr-details {
+  padding: 4px 42px 0;
+}
 #r-receipt .rr-detail-row {
   display: flex;
   justify-content: space-between;
@@ -3467,19 +3487,25 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   padding: 13px 0;
   border-bottom: 1.5px solid #edf2f6;
 }
-#r-receipt .rr-detail-row:last-child { border-bottom: none; }
+#r-receipt .rr-detail-row:last-child {
+  border-bottom: none;
+}
 #r-receipt .rr-detail-label {
-  color: #0a4d63;
+  color: #0e5f78;
   font-size: 20px;
   font-weight: 700;
-  font-family: 'Tajawal', sans-serif;
+  font-family: 'Tajawal', sans-serif !important;
+  flex: 1;
+  text-align: right;
 }
 #r-receipt .rr-detail-val {
-  color: #0a4d63;
+  color: #0e5f78;
   font-size: 20px;
   font-weight: 700;
   direction: ltr;
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Roboto', sans-serif !important;
+  flex: 1;
+  text-align: left;
 }
 #r-receipt .rr-total {
   padding: 16px 42px 22px;
@@ -3489,29 +3515,20 @@ body.dark #actions-menu button:hover{background:#263238!important;}
   align-items: center;
 }
 #r-receipt .rr-total-label {
-  color: #062f3d;
+  color: #083d50;
   font-size: 21px;
   font-weight: 900;
-  font-family: 'Tajawal', sans-serif;
+  font-family: 'Tajawal', sans-serif !important;
+  flex: 1;
+  text-align: right;
 }
 #r-receipt .rr-total-val {
-  color: #062f3d;
+  color: #083d50;
   font-size: 21px;
   font-weight: 900;
   direction: ltr;
-  font-family: 'Roboto', sans-serif;
-}
-/* ══ Receipt column alignment ══ */
-#r-receipt .rr-row-label,
-#r-receipt .rr-detail-label,
-#r-receipt .rr-total-label {
-  min-width: 45%;
-  text-align: right;
-}
-#r-receipt .rr-row-val,
-#r-receipt .rr-detail-val,
-#r-receipt .rr-total-val {
-  min-width: 45%;
+  font-family: 'Roboto', sans-serif !important;
+  flex: 1;
   text-align: left;
 }
 /* Receipt Log */
