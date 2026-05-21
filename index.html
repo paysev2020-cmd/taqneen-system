@@ -3364,29 +3364,141 @@ body.dark #actions-menu button:hover{background:#263238!important;}
 .r-preview-label { font-size:11px; color:#8fa8bc; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:14px; }
 
 /* The Receipt itself */
-#r-receipt { width:min(500px,100%); background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 4px 28px rgba(0,0,0,0.11); font-family:'Tajawal',sans-serif !important; direction:rtl; }
-.rr-header { background:#fff; margin:18px 18px 0; border-radius:12px; border:1.5px solid #dde6ec; padding:20px 26px; display:flex; justify-content:space-between; align-items:center; }
-.rr-header-label { color:#1a252f; font-size:18px; font-weight:400; font-family:'Tajawal',sans-serif; }
-.rr-header-value { color:#111c23; font-size:32px; font-weight:900; font-family:'Tajawal',sans-serif; letter-spacing:-0.5px; }
-.rr-body { background:#fff; padding:14px 18px 6px; }
-.rr-card { background:#fff; border-radius:12px; border:1.5px solid #dde6ec; padding:18px 24px 16px; }
-.rr-card-title { text-align:center; color:#111c23; font-size:20px; font-weight:700; margin-bottom:10px; font-family:'Tajawal',sans-serif; }
-.rr-card-bignum { text-align:center; color:#111c23; font-size:30px; font-weight:900; letter-spacing:1px; margin-bottom:16px; direction:ltr; font-family:'Roboto',sans-serif; }
-.rr-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; }
-.rr-row-label { color:#0e5f78; font-size:19px; font-weight:700; font-family:'Tajawal',sans-serif; }
-.rr-row-val { color:#0e5f78; font-size:19px; font-weight:700; direction:ltr; text-align:left; font-family:'Roboto',sans-serif; }
-.rr-payfor { margin-top:16px; padding-top:16px; border-top:1.5px solid #dde6ec; text-align:center; color:#111c23; font-size:18px; font-weight:400; line-height:1.8; font-family:'Tajawal',sans-serif; }
-.rr-payfor-line2 { display:block; font-size:22px; font-weight:800; color:#111c23; direction:ltr; text-align:center; font-family:'Roboto',sans-serif; margin-top:4px; }
-.rr-divider { height:1.5px; background:#dde6ec; }
-.rr-details { padding:4px 44px 0; }
-.rr-detail-row { display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:1px solid #edf2f6; }
-.rr-detail-row:last-child { border-bottom:none; }
-.rr-detail-label { color:#0e5f78; font-size:19px; font-weight:600; font-family:'Tajawal',sans-serif; }
-.rr-detail-val { color:#0e5f78; font-size:19px; font-weight:600; direction:ltr; font-family:'Roboto',sans-serif; }
-.rr-total { padding:18px 44px 24px; border-top:2px solid #dde6ec; display:flex; justify-content:space-between; align-items:center; }
-.rr-total-label { color:#083d50; font-size:22px; font-weight:900; font-family:'Tajawal',sans-serif; }
-.rr-total-val { color:#083d50; font-size:22px; font-weight:900; direction:ltr; font-family:'Roboto',sans-serif; }
-
+#r-receipt { width: min(500px,100%); background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 28px rgba(0,0,0,0.11); font-family: 'Tajawal', sans-serif; direction: rtl; }
+.rr-header {
+  background: #ffffff;
+  margin: 18px 18px 0;
+  border-radius: 12px;
+  border: 1.5px solid #dde6ec;
+  padding: 18px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.rr-header-label {
+  color: #1a252f;
+  font-size: 25px;
+  font-weight: 600;
+  font-family: 'Tajawal', sans-serif;
+}
+.rr-header-value {
+  color: #111c23;
+  font-size: 30px;
+  font-weight: 900;
+  font-family: 'Tajawal', sans-serif;
+}
+.rr-body {
+  background: #ffffff;
+  padding: 14px 18px 6px;
+}
+.rr-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1.5px solid #dde6ec;
+  padding: 18px 24px 16px;
+  margin: 0;
+}
+.rr-card-title {
+  text-align: center;
+  color: #111c23;
+  font-size: 21px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-family: 'Tajawal', sans-serif;
+}
+.rr-card-bignum {
+  text-align: center;
+  color: #111c23;
+  font-size: 27px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  margin-bottom: 14px;
+  direction: ltr;
+  font-family: 'Roboto', sans-serif;
+}
+.rr-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+.rr-row-label {
+  color: #0e5f78;
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'Tajawal', sans-serif;
+}
+.rr-row-val {
+  color: #0e5f78;
+  font-size: 20px;
+  font-weight: 700;
+  direction: ltr;
+  text-align: left;
+  font-family: 'Roboto', sans-serif;
+}
+.rr-payfor {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1.5px solid #dde6ec;
+  text-align: center;
+  color: #111c23;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.7;
+  font-family: 'Tajawal', sans-serif;
+}
+.rr-payfor-line2 {
+  display: block;
+  font-size: 20px;
+  font-weight: 800;
+  color: #111c23;
+  direction: ltr;
+  text-align: center;
+  font-family: 'Roboto', sans-serif;
+}
+.rr-divider { height: 1.5px; background: #dde6ec; margin: 0; }
+.rr-details { padding: 4px 42px 0; }
+.rr-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1.5px solid #edf2f6;
+}
+.rr-detail-row:last-child { border-bottom: none; }
+.rr-detail-label {
+  color: #0e5f78;
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'Tajawal', sans-serif;
+}
+.rr-detail-val {
+  color: #0e5f78;
+  font-size: 20px;
+  font-weight: 700;
+  direction: ltr;
+  font-family: 'Roboto', sans-serif;
+}
+.rr-total {
+  padding: 16px 42px 22px;
+  border-top: 1.5px solid #dde6ec;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.rr-total-label {
+  color: #083d50;
+  font-size: 21px;
+  font-weight: 900;
+  font-family: 'Tajawal', sans-serif;
+}
+.rr-total-val {
+  color: #083d50;
+  font-size: 21px;
+  font-weight: 900;
+  direction: ltr;
+  font-family: 'Roboto', sans-serif;
+}
 /* Receipt Log */
 .r-log-wrap { flex:1; padding:16px; overflow-y:auto; background:#e9eef3; width:100%; }
 .r-log-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:8px; }
