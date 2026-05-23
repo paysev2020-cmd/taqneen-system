@@ -181,6 +181,8 @@ const can = {
   readonly: () => userRole === 'readonly',
 };
 
+window.can = can; // expose to receipt JS
+
 // ══════════════════════════════════════════════
 // AUTH
 // ══════════════════════════════════════════════
@@ -3558,7 +3560,7 @@ body.dark #actions-menu button:hover{background:#263238!important;}
 .r-stat-box { background:#fff; border-radius:10px; padding:9px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.07); text-align:center; min-width:110px; }
 .r-stat-box .sv { color:#083d50; font-size:15px; font-weight:900; font-family:'Roboto',sans-serif; }
 .r-stat-box .sl { color:#7fa3be; font-size:10px; font-weight:700; margin-top:2px; }
-.r-filter-bar { background:#fff; border-radius:10px; padding:11px 14px; margin-bottom:10px; display:flex; gap:9px; flex-wrap:wrap; align-items:center; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.r-filter-bar { background:#fff; border-radius:10px; padding:11px 14px; margin-bottom:10px; display:flex; gap:9px; flex-wrap:nowrap; align-items:center; box-shadow:0 2px 8px rgba(0,0,0,0.06); overflow-x:auto; }
 .r-filter-bar input, .r-filter-bar select { background:#f4f8fb; border:1px solid #dde6ec; border-radius:7px; padding:7px 11px; font-family:'Tajawal',sans-serif; font-size:13px; color:#1c2b3a; outline:none; }
 .r-log-table-wrap { overflow-x:auto; background:#fff; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.07); }
 .r-log-table { width:100%; border-collapse:collapse; font-family:'Tajawal',sans-serif; direction:rtl; min-width:900px; }
