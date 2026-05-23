@@ -2140,6 +2140,11 @@ window.handleReceiptTabClick = function(){
   if(typeof checkReceiptAccess === 'function' && !checkReceiptAccess()) return;
   showPage('pg-receipts');
   if(window.initReceiptSystem) initReceiptSystem();
+  // Always update tab visibility based on current role
+  const settingsBtn = document.getElementById('rSettingsTabBtn');
+  const logBtn = document.getElementById('rLogTabBtn');
+  if(settingsBtn) settingsBtn.style.display = can.manage() ? '' : 'none';
+  if(logBtn) logBtn.style.display = can.edit() ? '' : 'none';
 };
 window.exportBackupJson=function(){
   if(!can.export())return;
