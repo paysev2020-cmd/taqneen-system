@@ -4013,9 +4013,9 @@ body.r-dark-mode #pg-receipts .r-filter-bar select { background:#263238; border-
   <!-- Receipt Tabs Bar -->
   <div class="r-tabs-bar" id="rTabsBar">
     <button class="r-tab-btn active" onclick="switchRTab('r-tab-receipt',this)">🧾 إيصال جديد</button>
-    <button class="r-tab-btn" onclick="switchRTab('r-tab-log',this)">📋 السجل <span id="rLogBadge" style="background:#0e5f78;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-right:3px;display:none">0</span></button>
+    <button class="r-tab-btn" id="rLogTabBtn" onclick="switchRTab('r-tab-log',this)">📋 السجل <span id="rLogBadge" style="background:#0e5f78;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-right:3px;display:none">0</span></button>
     <button class="r-tab-btn" onclick="switchRTab('r-tab-summary',this)">📊 الملخصات</button>
-    <button class="r-tab-btn" onclick="switchRTab('r-tab-settings',this)">⚙️ الإعدادات</button>
+    <button class="r-tab-btn" id="rSettingsTabBtn" onclick="switchRTab('r-tab-settings',this)" style="display:none;">⚙️ الإعدادات</button>
   </div>
 
   <!-- Stats Bar -->
@@ -4025,9 +4025,8 @@ body.r-dark-mode #pg-receipts .r-filter-bar select { background:#263238; border-
     <div class="sb-item">💰 <span>المبالغ:</span><span class="sb-val" id="rsb_today_total">EGP 0.00</span></div>
     <span style="color:#1c3a50">|</span>
     <div class="sb-item">📈 <span>الدخل:</span><span class="sb-val" id="rsb_today_profit">EGP 0.00</span></div>
-    <span class="sb-time" id="rsb_time"></span>
-    <span style="color:#4a7a96;font-size:11px;cursor:pointer;border:1px solid #1c3a50;border-radius:4px;padding:1px 6px;flex-shrink:0;" onclick="toggleRShortcuts()">⌨️ Shortcuts</span>
-    <span id="rDarkBtn" style="color:#4a7a96;font-size:11px;cursor:pointer;border:1px solid #1c3a50;border-radius:4px;padding:1px 6px;flex-shrink:0;margin-right:4px;" onclick="rToggleDark()" title="الوضع الليلي/النهاري">🌙</span>
+    <span class="sb-time" id="rsb_time" style="font-size:13px;font-weight:700;color:#7fb3cc;letter-spacing:0.5px;"></span>
+    <span id="rDarkBtn" style="color:#4a7a96;font-size:13px;cursor:pointer;border:1px solid #1c3a50;border-radius:4px;padding:2px 8px;flex-shrink:0;" onclick="rToggleDark()" title="الوضع الليلي/النهاري">🌙</span>
   </div>
 
   <!-- Hidden file input for import -->
@@ -4193,7 +4192,8 @@ body.r-dark-mode #pg-receipts .r-filter-bar select { background:#263238; border-
     </div>
 
     <div class="r-filter-bar">
-      <input type="text" id="rFilterText" placeholder="🔍 بحث بالرقم أو الكود أو الملاحظة..." oninput="rRenderLog()" style="flex:1;min-width:140px;">
+      <input type="date" id="rFilterDatePicker" onchange="rRenderLog()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:7px;padding:6px 10px;color:#c8dae6;font-family:'Tajawal',sans-serif;font-size:12px;margin-left:6px;" title="بحث بتاريخ">
+        <input type="text" id="rFilterText" placeholder="🔍 بحث بالرقم أو الكود أو الملاحظة..." oninput="rRenderLog()" style="flex:1;min-width:140px;">
       <select id="rFilterMethod" onchange="rRenderLog()">
         <option value="">كل طرق الدفع</option>
         <option value="نقدا">نقدا</option>
@@ -4201,7 +4201,7 @@ body.r-dark-mode #pg-receipts .r-filter-bar select { background:#263238; border-
         <option value="تحويل بنكي">تحويل بنكي</option>
         <option value="محفظة إلكترونية">محفظة إلكترونية</option>
       </select>
-      <select id="rFilterDate" onchange="rRenderLog()">
+      <select id="rFilterDatePicker" onchange="rRenderLog()">
         <option value="today">اليوم</option>
         <option value="week">هذا الأسبوع</option>
         <option value="month">هذا الشهر</option>
@@ -4501,6 +4501,13 @@ window.initReceiptSystem = function(){
   setInterval(rUpdateStatsBar, 5000);
   rUpdateStatsBar();
   rInitSettingsForm();
+  // Show/hide tabs based on role
+  const isAdmin = can.admin ? can.admin() : false;
+  const isManager = typeof can.manage === 'function' && can.manage();
+  const settingsBtn = document.getElementById('rSettingsTabBtn');
+  const logBtn = document.getElementById('rLogTabBtn');
+  if(settingsBtn) settingsBtn.style.display = isAdmin ? '' : 'none';
+  if(logBtn) logBtn.style.display = isManager ? '' : 'none';
 };
 
 /* ════════ RECEIPT TAB SWITCHING ════════ */
@@ -4512,6 +4519,13 @@ window.switchRTab = function(name, btn){
   if(name==='r-tab-log') rRenderLog();
   if(name==='r-tab-summary') rRenderSummary('week');
   if(name==='r-tab-settings') rInitSettingsForm();
+  // Show/hide tabs based on role
+  const isAdmin = can.admin ? can.admin() : false;
+  const isManager = typeof can.manage === 'function' && can.manage();
+  const settingsBtn = document.getElementById('rSettingsTabBtn');
+  const logBtn = document.getElementById('rLogTabBtn');
+  if(settingsBtn) settingsBtn.style.display = isAdmin ? '' : 'none';
+  if(logBtn) logBtn.style.display = isManager ? '' : 'none';
 };
 
 /* ════════ PAYFOR TEMPLATES ════════ */
@@ -4696,10 +4710,21 @@ function rFilterLog(){
   else if(dateF==='month') log=log.filter(r=>r.date>=sm);
   if(method) log=log.filter(r=>r.method===method);
   if(search) log=log.filter(r=>(r.reg+r.payfor+(r.note||'')).toLowerCase().includes(search));
+  const datePicker = document.getElementById('rFilterDatePicker')?.value||'';
+  if(datePicker) log=log.filter(r=>r.date===datePicker);
   return log;
 }
 
 /* ════════ RENDER LOG ════════ */
+
+window.rDeleteEntry = function(id){
+  if(!confirm('حذف هذا السجل نهائياً؟')) return;
+  const log = rGetLog().filter(r => String(r.id) !== String(id));
+  rSaveLog(log);
+  rRenderLog();
+  rUpdateLogBadge();
+  rToast('✅ تم حذف السجل');
+};
 window.rRenderLog = function(){
   const log = rFilterLog();
   const el_count  = document.getElementById('rstat_count');
@@ -4716,7 +4741,7 @@ window.rRenderLog = function(){
       <td class="r-log-num">${log.length-i}</td>
       <td class="r-log-num" style="font-size:10px">${r.time}<br><span style="color:#8fa8bc">${r.date}</span></td>
       <td class="r-log-num">${r.reg}</td>
-      <td style="max-width:120px;font-size:11px;color:#e8a020;font-style:italic">${r.note||'—'}</td>
+      <td style="font-size:11px;color:#1a252f;font-style:italic;white-space:normal;word-break:break-word;min-width:100px;max-width:150px;line-height:1.4;">${r.note||'—'}</td>
       <td style="max-width:130px;word-break:break-all;font-size:11px">${r.payfor}</td>
       <td><span class="r-badge-method">${r.method}</span></td>
       <td class="r-log-num">EGP ${r.amount.toFixed(2)}</td>
@@ -4725,7 +4750,7 @@ window.rRenderLog = function(){
       <td class="r-log-profit">EGP ${r.profit.toFixed(2)}</td>
       <td class="r-log-num">${r.issue}</td>
       <td class="r-log-num">${r.expire}</td>
-      
+      <td><button onclick="rDeleteEntry('${r.id}')" style="background:#e74c3c;color:#fff;border:none;border-radius:5px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:'Tajawal',sans-serif;">🗑 حذف</button></td>
     </tr>`).join('');
 };
 
