@@ -4729,7 +4729,7 @@ window.rRenderLog = function(){
   const el_ops    = document.getElementById('rstat_ops');
   const el_profit = document.getElementById('rstat_profit');
   if(el_count)  el_count.textContent  = log.length;
-  if(el_ops)    el_ops.textContent    = 'EGP '+log.reduce((s,r)=>s+r.amount,0).toFixed(2);
+  if(el_ops)    el_ops.textContent    = 'EGP '+log.reduce((s,r)=>s+r.total,0).toFixed(2);
   if(el_profit) el_profit.textContent = 'EGP '+log.reduce((s,r)=>s+r.profit,0).toFixed(2);
   const tbody = document.getElementById('rLogBody');
   if(!tbody) return;
