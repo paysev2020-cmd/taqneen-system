@@ -4192,8 +4192,8 @@ body.r-dark-mode #pg-receipts .r-filter-bar select { background:#263238; border-
     </div>
 
     <div class="r-filter-bar">
-      <input type="date" id="rFilterDatePicker" onchange="rRenderLog()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:7px;padding:6px 10px;color:#c8dae6;font-family:'Tajawal',sans-serif;font-size:12px;margin-left:6px;" title="بحث بتاريخ">
         <input type="text" id="rFilterText" placeholder="🔍 بحث بالرقم أو الكود أو الملاحظة..." oninput="rRenderLog()" style="flex:1;min-width:140px;">
+        <input type="date" id="rFilterDateInput" onchange="rRenderLog()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:7px;padding:6px 10px;color:#c8dae6;font-family:'Tajawal',sans-serif;font-size:12px;" title="🗓 بحث بتاريخ محدد">
       <select id="rFilterMethod" onchange="rRenderLog()">
         <option value="">كل طرق الدفع</option>
         <option value="نقدا">نقدا</option>
@@ -4201,7 +4201,7 @@ body.r-dark-mode #pg-receipts .r-filter-bar select { background:#263238; border-
         <option value="تحويل بنكي">تحويل بنكي</option>
         <option value="محفظة إلكترونية">محفظة إلكترونية</option>
       </select>
-      <select id="rFilterDatePicker" onchange="rRenderLog()">
+      <select id="rFilterDate" onchange="rRenderLog()">
         <option value="today">اليوم</option>
         <option value="week">هذا الأسبوع</option>
         <option value="month">هذا الشهر</option>
@@ -4502,12 +4502,11 @@ window.initReceiptSystem = function(){
   rUpdateStatsBar();
   rInitSettingsForm();
   // Show/hide tabs based on role
-  const isAdmin = can.admin ? can.admin() : false;
-  const isManager = typeof can.manage === 'function' && can.manage();
   const settingsBtn = document.getElementById('rSettingsTabBtn');
   const logBtn = document.getElementById('rLogTabBtn');
-  if(settingsBtn) settingsBtn.style.display = isAdmin ? '' : 'none';
-  if(logBtn) logBtn.style.display = isManager ? '' : 'none';
+  // Settings: admin only | Log: admin + supervisor
+  if(settingsBtn) settingsBtn.style.display = can.manage() ? '' : 'none';
+  if(logBtn) logBtn.style.display = can.edit() ? '' : 'none';
 };
 
 /* ════════ RECEIPT TAB SWITCHING ════════ */
@@ -4520,12 +4519,11 @@ window.switchRTab = function(name, btn){
   if(name==='r-tab-summary') rRenderSummary('week');
   if(name==='r-tab-settings') rInitSettingsForm();
   // Show/hide tabs based on role
-  const isAdmin = can.admin ? can.admin() : false;
-  const isManager = typeof can.manage === 'function' && can.manage();
   const settingsBtn = document.getElementById('rSettingsTabBtn');
   const logBtn = document.getElementById('rLogTabBtn');
-  if(settingsBtn) settingsBtn.style.display = isAdmin ? '' : 'none';
-  if(logBtn) logBtn.style.display = isManager ? '' : 'none';
+  // Settings: admin only | Log: admin + supervisor
+  if(settingsBtn) settingsBtn.style.display = can.manage() ? '' : 'none';
+  if(logBtn) logBtn.style.display = can.edit() ? '' : 'none';
 };
 
 /* ════════ PAYFOR TEMPLATES ════════ */
@@ -4710,7 +4708,7 @@ function rFilterLog(){
   else if(dateF==='month') log=log.filter(r=>r.date>=sm);
   if(method) log=log.filter(r=>r.method===method);
   if(search) log=log.filter(r=>(r.reg+r.payfor+(r.note||'')).toLowerCase().includes(search));
-  const datePicker = document.getElementById('rFilterDatePicker')?.value||'';
+  const datePicker = document.getElementById('rFilterDateInput')?.value||'';
   if(datePicker) log=log.filter(r=>r.date===datePicker);
   return log;
 }
@@ -4741,7 +4739,7 @@ window.rRenderLog = function(){
       <td class="r-log-num">${log.length-i}</td>
       <td class="r-log-num" style="font-size:10px">${r.time}<br><span style="color:#8fa8bc">${r.date}</span></td>
       <td class="r-log-num">${r.reg}</td>
-      <td style="font-size:11px;color:#1a252f;font-style:italic;white-space:normal;word-break:break-word;min-width:100px;max-width:150px;line-height:1.4;">${r.note||'—'}</td>
+      <td style="font-size:12px;color:#1a252f;font-weight:600;white-space:normal;word-break:break-word;min-width:110px;max-width:160px;line-height:1.5;padding:4px 2px;">${r.note||'—'}</td>
       <td style="max-width:130px;word-break:break-all;font-size:11px">${r.payfor}</td>
       <td><span class="r-badge-method">${r.method}</span></td>
       <td class="r-log-num">EGP ${r.amount.toFixed(2)}</td>
