@@ -122,12 +122,15 @@ import { initializeApp }           from "https://www.gstatic.com/firebasejs/10.1
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
                                     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, updateDoc, deleteDoc,
-         doc, onSnapshot, query, orderBy, serverTimestamp, getDoc, setDoc, getDocs }
+         doc, onSnapshot, query, orderBy, where, serverTimestamp, getDoc, setDoc, getDocs, limit }
                                     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const app  = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 const db   = getFirestore(app);
+window.db = db; // expose for receipt JS
+window._fbDeleteDoc = deleteDoc; // expose for receipt JS
+window._fbDoc = doc; // expose for receipt JS
 
 // معالجة نتيجة الـ redirect — لو المستخدم رجع من Google
 getRedirectResult(auth).then(result => {
@@ -2147,6 +2150,8 @@ window.handleReceiptTabClick = function(){
   const logBtn = document.getElementById('rLogTabBtn');
   if(settingsBtn) settingsBtn.style.display = can.manage() ? '' : 'none';
   if(logBtn) logBtn.style.display = can.edit() ? '' : 'none';
+  const adminCard = document.getElementById('rAdminReceiptsCard');
+  if(adminCard) adminCard.style.display = can.manage() ? '' : 'none';
 };
 window.exportBackupJson=function(){
   if(!can.export())return;
@@ -4320,6 +4325,41 @@ body.r-dark-mode #pg-receipts .r-filter-bar select { background:#263238; border-
         <h3>ℹ️ معلومات النظام</h3>
         <div id="rSysInfoRows"></div>
       </div>
+
+      <!-- Admin: All Staff Receipts -->
+      <div class="r-settings-card" id="rAdminReceiptsCard" style="display:none;">
+        <h3>👥 سجل إيصالات الفريق</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+          <select id="rAdminFilterUser" onchange="rLoadAdminReceipts()" style="flex:1;min-width:160px;">
+            <option value="">كل الموظفين</option>
+          </select>
+          <input type="date" id="rAdminFilterDate" onchange="rLoadAdminReceipts()" style="flex:1;min-width:130px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:7px;padding:7px 10px;color:#c8dae6;font-family:'Tajawal',sans-serif;font-size:12px;">
+          <button onclick="rLoadAdminReceipts()" style="background:#0e5f78;color:#fff;border:none;border-radius:7px;padding:8px 16px;font-family:'Tajawal',sans-serif;font-size:13px;cursor:pointer;">🔄 تحديث</button>
+        </div>
+        <div id="rAdminStats" style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;"></div>
+        <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;" id="rAdminTable">
+            <thead style="position:sticky;top:0;">
+              <tr style="background:#0e5f78;color:#fff;">
+                <th style="padding:8px;text-align:right;">#</th>
+                <th style="padding:8px;text-align:right;">الموظف</th>
+                <th style="padding:8px;text-align:right;">الوقت</th>
+                <th style="padding:8px;text-align:right;">رقم التسجيل</th>
+                <th style="padding:8px;text-align:right;">Payment for</th>
+                <th style="padding:8px;text-align:right;">المبلغ</th>
+                <th style="padding:8px;text-align:right;">التكلفة</th>
+                <th style="padding:8px;text-align:right;">الكلي</th>
+                <th style="padding:8px;text-align:right;">ملاحظة</th>
+                <th style="padding:8px;text-align:right;">حذف</th>
+              </tr>
+            </thead>
+            <tbody id="rAdminTableBody">
+              <tr><td colspan="9" style="text-align:center;padding:20px;color:#8fa8bc;">اضغط "تحديث" لتحميل السجلات</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="rAdminTotal" style="text-align:left;margin-top:10px;font-weight:700;color:#0e5f78;font-size:13px;"></div>
+      </div>
     </div>
   </div>
   </div>
@@ -4508,12 +4548,17 @@ window.initReceiptSystem = function(){
   setInterval(rUpdateStatsBar, 5000);
   rUpdateStatsBar();
   rInitSettingsForm();
+  // Show admin receipts panel
+  const adminCard = document.getElementById('rAdminReceiptsCard');
+  if(adminCard) adminCard.style.display = can.manage() ? '' : 'none';
   // Show/hide tabs based on role
   const settingsBtn = document.getElementById('rSettingsTabBtn');
   const logBtn = document.getElementById('rLogTabBtn');
   // Settings: admin only | Log: admin + supervisor
   if(settingsBtn) settingsBtn.style.display = can.manage() ? '' : 'none';
   if(logBtn) logBtn.style.display = can.edit() ? '' : 'none';
+  const adminCard = document.getElementById('rAdminReceiptsCard');
+  if(adminCard) adminCard.style.display = can.manage() ? '' : 'none';
 };
 
 /* ════════ RECEIPT TAB SWITCHING ════════ */
@@ -4531,6 +4576,8 @@ window.switchRTab = function(name, btn){
   // Settings: admin only | Log: admin + supervisor
   if(settingsBtn) settingsBtn.style.display = can.manage() ? '' : 'none';
   if(logBtn) logBtn.style.display = can.edit() ? '' : 'none';
+  const adminCard = document.getElementById('rAdminReceiptsCard');
+  if(adminCard) adminCard.style.display = can.manage() ? '' : 'none';
 };
 
 /* ════════ PAYFOR TEMPLATES ════════ */
@@ -4689,7 +4736,8 @@ function rAddToLog(){
   const amount = parseFloat(document.getElementById('rf_amount').value)||0;
   const pct    = parseFloat(document.getElementById('rf_fee_pct').value)||0;
   const fee    = amount*pct/100;
-  const entry  = {
+  const noteVal = (document.getElementById('rf_note')||{value:''}).value.trim()||'';
+  const entry = {
     id: Date.now(), time: rNowTime(), date: rTodayStr(),
     reg:    document.getElementById('rf_reg').value||'—',
     payfor: document.getElementById('rf_payfor_code').value||'—',
@@ -4697,11 +4745,124 @@ function rAddToLog(){
     issue:  rFmtDate(document.getElementById('rf_issue').value),
     expire: rFmtDate(document.getElementById('rf_expire').value),
     amount, fee, total:amount+fee, profit:fee,
-    note: (document.getElementById('rf_note')||{value:''}).value.trim()||''
+    note: noteVal
   };
+  // حفظ في localStorage
   const log = rGetLog(); log.unshift(entry); rSaveLog(log);
   rUpdateLogBadge();
+  // حفظ في Firebase
+  rSaveReceiptToFirebase(entry);
 }
+
+async function rSaveReceiptToFirebase(entry){
+  try {
+    const user = window._currentUser;
+    if(!user || !window.db) return;
+    await addDoc(collection(window.db, 'receipts'), {
+      ...entry,
+      createdBy:     user.email,
+      createdByName: user.displayName || user.email,
+      createdAt:     serverTimestamp()
+    });
+  } catch(e){ console.warn('Firebase receipt save:', e.message); }
+}
+
+
+/* ════════ ADMIN RECEIPTS VIEWER ════════ */
+
+window.rAdminDeleteReceipt = async function(docId){
+  if(!confirm('حذف هذا الإيصال من سجل الفريق نهائياً؟')) return;
+  try {
+    const _del = window._fbDeleteDoc || deleteDoc;
+    const _doc = window._fbDoc || doc;
+    await _del(_doc(window.db, 'receipts', docId));
+    rToast('✅ تم حذف الإيصال');
+    rLoadAdminReceipts();
+  } catch(e) {
+    rToast('❌ فشل الحذف: ' + e.message, 'error');
+  }
+};
+window.rLoadAdminReceipts = async function(){
+  const tbody = document.getElementById('rAdminTableBody');
+  const statsDiv = document.getElementById('rAdminStats');
+  const totalDiv = document.getElementById('rAdminTotal');
+  if(!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;">⏳ جاري التحميل...</td></tr>';
+
+  try {
+    const filterUser = document.getElementById('rAdminFilterUser')?.value || '';
+    const filterDate = document.getElementById('rAdminFilterDate')?.value || '';
+
+    // Build query
+    let q = collection(window.db, 'receipts');
+    const constraints = [orderBy('createdAt', 'desc'), limit(500)];
+    if(filterUser) constraints.unshift(where('createdBy', '==', filterUser));
+    if(filterDate) constraints.unshift(where('date', '==', filterDate));
+    q = query(q, ...constraints);
+
+    const snap = await getDocs(q);
+    const receipts = [];
+    snap.forEach(d => receipts.push({...d.data(), _id: d.id}));
+
+    // Populate user dropdown
+    const userSelect = document.getElementById('rAdminFilterUser');
+    if(userSelect) {
+      const users = [...new Set(receipts.map(r => r.createdBy))].filter(Boolean);
+      const currentVal = userSelect.value;
+      userSelect.innerHTML = '<option value="">كل الموظفين</option>' +
+        users.map(u => `<option value="${u}" ${u===currentVal?'selected':''}>${u}</option>`).join('');
+    }
+
+    if(receipts.length === 0){
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:#8fa8bc;">لا توجد سجلات</td></tr>';
+      if(statsDiv) statsDiv.innerHTML = '';
+      if(totalDiv) totalDiv.textContent = '';
+      return;
+    }
+
+    // Calculate totals
+    const totalAmt   = receipts.reduce((s,r) => s+(r.amount||0), 0);
+    const totalFee   = receipts.reduce((s,r) => s+(r.fee||0), 0);
+    const totalAll   = receipts.reduce((s,r) => s+(r.total||0), 0);
+
+    if(statsDiv) statsDiv.innerHTML = `
+      <div style="background:#0e5f78;color:#fff;border-radius:8px;padding:8px 14px;font-size:12px;">
+        📋 <b>${receipts.length}</b> إيصال
+      </div>
+      <div style="background:#1a7a4a;color:#fff;border-radius:8px;padding:8px 14px;font-size:12px;">
+        💰 مبالغ: <b>EGP ${totalAmt.toFixed(2)}</b>
+      </div>
+      <div style="background:#7b3f00;color:#fff;border-radius:8px;padding:8px 14px;font-size:12px;">
+        📊 تكاليف: <b>EGP ${totalFee.toFixed(2)}</b>
+      </div>
+      <div style="background:#1c3a5e;color:#fff;border-radius:8px;padding:8px 14px;font-size:12px;">
+        ✅ إجمالي: <b>EGP ${totalAll.toFixed(2)}</b>
+      </div>`;
+
+    tbody.innerHTML = receipts.map((r,i) => `
+      <tr style="background:${i%2===0?'#f8fbfc':'#fff'};border-bottom:1px solid #edf2f6;">
+        <td style="padding:7px;text-align:right;">${i+1}</td>
+        <td style="padding:7px;text-align:right;font-size:11px;color:#0e5f78;">${r.createdByName||r.createdBy||'—'}</td>
+        <td style="padding:7px;text-align:right;font-size:11px;">${r.time||'—'}<br><span style="color:#8fa8bc;">${r.date||''}</span></td>
+        <td style="padding:7px;text-align:right;font-family:'Roboto';">${r.reg||'—'}</td>
+        <td style="padding:7px;text-align:right;font-size:11px;max-width:120px;word-break:break-all;">${r.payfor||'—'}</td>
+        <td style="padding:7px;text-align:right;font-family:'Roboto';">EGP ${(r.amount||0).toFixed(2)}</td>
+        <td style="padding:7px;text-align:right;font-family:'Roboto';">EGP ${(r.fee||0).toFixed(2)}</td>
+        <td style="padding:7px;text-align:right;font-family:'Roboto';font-weight:700;">EGP ${(r.total||0).toFixed(2)}</td>
+        <td style="padding:7px;text-align:right;font-size:11px;color:#555;">${r.note||'—'}</td>
+        <td style="padding:7px;text-align:center;">
+          <button onclick="rAdminDeleteReceipt('${r._id}')" style="background:#e74c3c;color:#fff;border:none;border-radius:5px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:'Tajawal',sans-serif;">🗑</button>
+        </td>
+      </tr>`).join('');
+
+    if(totalDiv) totalDiv.textContent = `الإجمالي الكلي: EGP ${totalAll.toFixed(2)}`;
+
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:#e74c3c;">❌ خطأ: ${e.message}</td></tr>`;
+    console.error('Admin receipts error:', e);
+  }
+};
 
 /* ════════ FILTER LOG ════════ */
 function rFilterLog(){
@@ -4918,6 +5079,7 @@ window.rPrintReceipt = async function(){
   if(ld){ document.getElementById('loadingText').textContent='جاري التجهيز للطباعة...'; ld.style.display='flex'; }
   try{
     rAddToLog(); await rAutoBackup();
+    const _n=document.getElementById('rf_note'); if(_n)_n.value='';
     if(ld) ld.style.display='none';
     window.print();
     rToast('✅ تم إرسال الإيصال للطباعة');
@@ -4931,6 +5093,7 @@ window.rSaveAsImage = async function(){
   try{
     const img = await rCaptureReceiptImage();
     rAddToLog(); await rAutoBackup();
+    const _n2=document.getElementById('rf_note'); if(_n2) _n2.value='';
     const a = document.createElement('a');
     a.download = 'receipt_'+(document.getElementById('rf_reg').value||'payment')+'_'+rTodayStr()+'.jpg';
     a.href = img; a.click();
