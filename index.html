@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cross-Origin-Opener-Policy" content="unsafe-none">
 <meta http-equiv="Cross-Origin-Embedder-Policy" content="unsafe-none">
-<title>نظام التقنين v25 — مع نظام الإيصالات</title>
+<title>نظام التقنين v26 — مع نظام الإيصالات</title>
 
 <!-- ═══════════════════════════════════════════════════════
      ⚙️  إعداد Firebase
@@ -129,8 +129,16 @@ const app  = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 window.db = db; // expose for receipt JS
-window._fbDeleteDoc = deleteDoc; // expose for receipt JS
-window._fbDoc = doc; // expose for receipt JS
+window._fbDeleteDoc = deleteDoc;
+window._fbDoc       = doc;
+window._fbCollection = collection;
+window._fbQuery      = query;
+window._fbWhere      = where;
+window._fbOrderBy    = orderBy;
+window._fbLimit      = limit;
+window._fbGetDocs    = getDocs;
+window._fbAddDoc     = addDoc;
+window._fbServerTimestamp = serverTimestamp;
 
 // معالجة نتيجة الـ redirect — لو المستخدم رجع من Google
 getRedirectResult(auth).then(result => {
@@ -4747,11 +4755,14 @@ async function rSaveReceiptToFirebase(entry){
   try {
     const user = window._currentUser;
     if(!user || !window.db) return;
-    await addDoc(collection(window.db, 'receipts'), {
+    const _add = window._fbAddDoc || addDoc;
+    const _col = window._fbCollection || collection;
+    const _ts  = window._fbServerTimestamp || serverTimestamp;
+    await _add(_col(window.db, 'receipts'), {
       ...entry,
       createdBy:     user.email,
       createdByName: user.displayName || user.email,
-      createdAt:     serverTimestamp()
+      createdAt:     _ts()
     });
   } catch(e){ console.warn('Firebase receipt save:', e.message); }
 }
@@ -4783,14 +4794,21 @@ window.rLoadAdminReceipts = async function(){
     const filterUser = document.getElementById('rAdminFilterUser')?.value || '';
     const filterDate = document.getElementById('rAdminFilterDate')?.value || '';
 
-    // Build query
-    let q = collection(window.db, 'receipts');
-    const constraints = [orderBy('createdAt', 'desc'), limit(500)];
-    if(filterUser) constraints.unshift(where('createdBy', '==', filterUser));
-    if(filterDate) constraints.unshift(where('date', '==', filterDate));
-    q = query(q, ...constraints);
+    const _collection = window._fbCollection;
+    const _query      = window._fbQuery;
+    const _where      = window._fbWhere;
+    const _orderBy    = window._fbOrderBy;
+    const _limit      = window._fbLimit;
+    const _getDocs    = window._fbGetDocs;
 
-    const snap = await getDocs(q);
+    // Build query
+    let q = _collection(window.db, 'receipts');
+    const constraints = [_orderBy('createdAt', 'desc'), _limit(500)];
+    if(filterUser) constraints.unshift(_where('createdBy', '==', filterUser));
+    if(filterDate) constraints.unshift(_where('date', '==', filterDate));
+    q = _query(q, ...constraints);
+
+    const snap = await _getDocs(q);
     const receipts = [];
     snap.forEach(d => receipts.push({...d.data(), _id: d.id}));
 
