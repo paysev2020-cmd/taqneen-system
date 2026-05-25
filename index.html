@@ -4334,14 +4334,17 @@ body.r-dark-mode #pg-receipts .r-filter-bar select { background:#263238; border-
       </div>
 
       <!-- Admin: All Staff Receipts -->
-      <div class="r-settings-card" id="rAdminReceiptsCard" style="display:none;">
+      <div class="r-settings-card" id="rAdminReceiptsCard" style="display:none;grid-column:1/-1;max-width:100%;">
         <h3>👥 سجل إيصالات الفريق</h3>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
           <select id="rAdminFilterUser" onchange="rLoadAdminReceipts()" style="flex:1;min-width:160px;">
             <option value="">كل الموظفين</option>
           </select>
-          <input type="date" id="rAdminFilterDate" onchange="rLoadAdminReceipts()" style="flex:1;min-width:130px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:7px;padding:7px 10px;color:#c8dae6;font-family:'Tajawal',sans-serif;font-size:12px;">
+          <input type="date" id="rAdminFilterDate" onchange="rLoadAdminReceipts()" style="flex:1;min-width:130px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:7px;padding:7px 10px;color:#c8dae6;font-family:'Tajawal',sans-serif;font-size:12px;" placeholder="من تاريخ">
+          <input type="date" id="rAdminFilterDateTo" onchange="rLoadAdminReceipts()" style="flex:1;min-width:130px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:7px;padding:7px 10px;color:#c8dae6;font-family:'Tajawal',sans-serif;font-size:12px;" placeholder="إلى تاريخ">
           <button onclick="rLoadAdminReceipts()" style="background:#0e5f78;color:#fff;border:none;border-radius:7px;padding:8px 16px;font-family:'Tajawal',sans-serif;font-size:13px;cursor:pointer;">🔄 تحديث</button>
+          <button onclick="rAdminExportExcel()" style="background:#1a7a4a;color:#fff;border:none;border-radius:7px;padding:8px 16px;font-family:'Tajawal',sans-serif;font-size:13px;cursor:pointer;">📊 Excel</button>
+          <button onclick="rAdminPrint()" style="background:#7b3f00;color:#fff;border:none;border-radius:7px;padding:8px 16px;font-family:'Tajawal',sans-serif;font-size:13px;cursor:pointer;">🖨️ طباعة</button>
         </div>
         <div id="rAdminStats" style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;"></div>
         <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
@@ -4770,6 +4773,78 @@ async function rSaveReceiptToFirebase(entry){
 
 /* ════════ ADMIN RECEIPTS VIEWER ════════ */
 
+
+window.rAdminExportExcel = function(){
+  const data = window._rAdminData;
+  if(!data || !data.length){ rToast('لا توجد بيانات','warning'); return; }
+  if(typeof XLSX === 'undefined'){ rToast('مكتبة Excel غير محملة','error'); return; }
+  const rows = data.map((r,i) => ({
+    '#': i+1,
+    'الموظف': r.createdByName||r.createdBy||'—',
+    'التاريخ': r.date||'',
+    'الوقت': r.time||'',
+    'رقم التسجيل': r.reg||'',
+    'Payment for': r.payfor||'',
+    'طريقة الدفع': r.method||'',
+    'مبلغ العملية': r.amount||0,
+    'تكلفة الخدمة': r.fee||0,
+    'المبلغ الكلي': r.total||0,
+    'الدخل الصافي': r.profit||0,
+    'ملاحظة': r.note||''
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'سجل الفريق');
+  XLSX.writeFile(wb, 'team_receipts_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  rToast('✅ تم تصدير Excel');
+};
+
+window.rAdminPrint = function(){
+  const data = window._rAdminData;
+  if(!data || !data.length){ rToast('لا توجد بيانات','warning'); return; }
+  const totalAll = data.reduce((s,r)=>s+(r.total||0),0);
+  const win = window.open('','_blank','width=1100,height=800');
+  win.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head>
+  <meta charset="UTF-8">
+  <title>سجل إيصالات الفريق</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    body{font-family:'Tajawal',sans-serif;padding:15mm;direction:rtl;}
+    h2{color:#0e5f78;margin-bottom:10px;}
+    table{width:100%;border-collapse:collapse;font-size:12px;}
+    th{background:#0e5f78;color:#fff;padding:7px;text-align:right;}
+    td{padding:6px;border-bottom:1px solid #eee;text-align:right;}
+    tr:nth-child(even){background:#f4f8fb;}
+    .total{margin-top:10px;font-size:14px;font-weight:700;color:#083d50;text-align:left;}
+    @media print{@page{size:A4 landscape;margin:8mm;}}
+  </style></head><body>
+  <h2>👥 سجل إيصالات الفريق — ${new Date().toLocaleDateString('ar-EG')}</h2>
+  <table>
+    <thead><tr>
+      <th>#</th><th>الموظف</th><th>التاريخ</th><th>رقم التسجيل</th>
+      <th>Payment for</th><th>طريقة الدفع</th><th>المبلغ</th><th>التكلفة</th><th>الكلي</th><th>ملاحظة</th>
+    </tr></thead>
+    <tbody>
+      ${data.map((r,i)=>`<tr>
+        <td>${i+1}</td>
+        <td>${r.createdByName||r.createdBy||'—'}</td>
+        <td>${r.date||''}</td>
+        <td style="font-family:monospace">${r.reg||'—'}</td>
+        <td style="font-size:11px">${r.payfor||'—'}</td>
+        <td>${r.method||'—'}</td>
+        <td>EGP ${(r.amount||0).toFixed(2)}</td>
+        <td>EGP ${(r.fee||0).toFixed(2)}</td>
+        <td style="font-weight:700">EGP ${(r.total||0).toFixed(2)}</td>
+        <td style="font-size:11px">${r.note||'—'}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+  <div class="total">الإجمالي الكلي: EGP ${totalAll.toFixed(2)} | عدد الإيصالات: ${data.length}</div>
+  <script>setTimeout(()=>window.print(),500);<\/script>
+  </body></html>`);
+  win.document.close();
+  rToast('✅ جاري الطباعة');
+};
 window.rAdminDeleteReceipt = async function(docId){
   if(!confirm('حذف هذا الإيصال من سجل الفريق نهائياً؟')) return;
   try {
@@ -4803,14 +4878,30 @@ window.rLoadAdminReceipts = async function(){
 
     // Build query
     let q = _collection(window.db, 'receipts');
-    const constraints = [_orderBy('createdAt', 'desc'), _limit(500)];
-    if(filterUser) constraints.unshift(_where('createdBy', '==', filterUser));
-    if(filterDate) constraints.unshift(_where('date', '==', filterDate));
+    // Simple query without composite index requirement
+    const constraints = [_limit(500)];
+    if(filterUser) constraints.push(_where('createdBy', '==', filterUser));
+    // Note: filterDate and filterDateTo applied client-side for flexibility
     q = _query(q, ...constraints);
 
     const snap = await _getDocs(q);
     const receipts = [];
     snap.forEach(d => receipts.push({...d.data(), _id: d.id}));
+    // Sort by date+time descending (client-side)
+    receipts.sort((a,b) => {
+      const da = (a.date||'') + (a.time||'');
+      const db2 = (b.date||'') + (b.time||'');
+      return db2.localeCompare(da);
+    });
+    // Apply date range filter client-side
+    const filterDateFrom = document.getElementById('rAdminFilterDate')?.value || '';
+    const filterDateTo   = document.getElementById('rAdminFilterDateTo')?.value || '';
+    const filteredReceipts = receipts.filter(r => {
+      if(filterDateFrom && r.date < filterDateFrom) return false;
+      if(filterDateTo   && r.date > filterDateTo)   return false;
+      return true;
+    });
+    const finalReceipts = filterDateFrom || filterDateTo ? filteredReceipts : receipts;
 
     // Populate user dropdown
     const userSelect = document.getElementById('rAdminFilterUser');
@@ -4821,18 +4912,20 @@ window.rLoadAdminReceipts = async function(){
         users.map(u => `<option value="${u}" ${u===currentVal?'selected':''}>${u}</option>`).join('');
     }
 
-    if(receipts.length === 0){
+    if(finalReceipts.length === 0){
       tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:#8fa8bc;">لا توجد سجلات</td></tr>';
-      if(statsDiv) statsDiv.innerHTML = '';
+      window._rAdminData = finalReceipts; // store for export
+    if(statsDiv) statsDiv.innerHTML = '';
       if(totalDiv) totalDiv.textContent = '';
       return;
     }
 
     // Calculate totals
-    const totalAmt   = receipts.reduce((s,r) => s+(r.amount||0), 0);
-    const totalFee   = receipts.reduce((s,r) => s+(r.fee||0), 0);
-    const totalAll   = receipts.reduce((s,r) => s+(r.total||0), 0);
+    const totalAmt   = finalReceipts.reduce((s,r) => s+(r.amount||0), 0);
+    const totalFee   = finalReceipts.reduce((s,r) => s+(r.fee||0), 0);
+    const totalAll   = finalReceipts.reduce((s,r) => s+(r.total||0), 0);
 
+    window._rAdminData = finalReceipts; // store for export
     if(statsDiv) statsDiv.innerHTML = `
       <div style="background:#0e5f78;color:#fff;border-radius:8px;padding:8px 14px;font-size:12px;">
         📋 <b>${receipts.length}</b> إيصال
@@ -4847,7 +4940,7 @@ window.rLoadAdminReceipts = async function(){
         ✅ إجمالي: <b>EGP ${totalAll.toFixed(2)}</b>
       </div>`;
 
-    tbody.innerHTML = receipts.map((r,i) => `
+    tbody.innerHTML = finalReceipts.map((r,i) => `
       <tr style="background:${i%2===0?'#f8fbfc':'#fff'};border-bottom:1px solid #edf2f6;">
         <td style="padding:7px;text-align:right;">${i+1}</td>
         <td style="padding:7px;text-align:right;font-size:11px;color:#0e5f78;">${r.createdByName||r.createdBy||'—'}</td>
@@ -4863,7 +4956,7 @@ window.rLoadAdminReceipts = async function(){
         </td>
       </tr>`).join('');
 
-    if(totalDiv) totalDiv.textContent = `الإجمالي الكلي: EGP ${totalAll.toFixed(2)}`;
+    if(totalDiv) totalDiv.textContent = `الإجمالي الكلي: EGP ${totalAll.toFixed(2)} | عدد الإيصالات: ${finalReceipts.length}`;
 
   } catch(e) {
     tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:#e74c3c;">❌ خطأ: ${e.message}</td></tr>`;
