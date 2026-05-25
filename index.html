@@ -129,6 +129,7 @@ const app  = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 const db   = getFirestore(app);
 window.db = db; // expose for receipt JS
+window.currentUser = null; // will be set on auth change
 window._fbDeleteDoc = deleteDoc;
 window._fbDoc       = doc;
 window._fbCollection = collection;
@@ -229,6 +230,7 @@ window.logout = async function() {
 
 onAuthStateChanged(auth, async user => {
   currentUser = user;
+  window._currentUser = user; // expose for receipt JS
   if(user) {
     // الترتيب الصح: 1) حمّل الفريق أولاً 2) سجّل المستخدم 3) احسب الدور
     await loadTeamOnce();
@@ -4756,8 +4758,8 @@ function rAddToLog(){
 
 async function rSaveReceiptToFirebase(entry){
   try {
-    const user = window._currentUser;
-    if(!user || !window.db) return;
+    const user = window._currentUser || window.currentUser;
+    if(!user || !window.db) { console.warn('Receipt save: no user or db'); return; }
     const _add = window._fbAddDoc || addDoc;
     const _col = window._fbCollection || collection;
     const _ts  = window._fbServerTimestamp || serverTimestamp;
