@@ -2150,8 +2150,7 @@ window.handleReceiptTabClick = function(){
   const logBtn = document.getElementById('rLogTabBtn');
   if(settingsBtn) settingsBtn.style.display = can.manage() ? '' : 'none';
   if(logBtn) logBtn.style.display = can.edit() ? '' : 'none';
-  const adminCard = document.getElementById('rAdminReceiptsCard');
-  if(adminCard) adminCard.style.display = can.manage() ? '' : 'none';
+  (function(){ const el=document.getElementById('rAdminReceiptsCard'); if(el) el.style.display=can.manage()?'':'none'; })();
 };
 window.exportBackupJson=function(){
   if(!can.export())return;
@@ -4549,16 +4548,11 @@ window.initReceiptSystem = function(){
   rUpdateStatsBar();
   rInitSettingsForm();
   // Show admin receipts panel
-  const adminCard = document.getElementById('rAdminReceiptsCard');
-  if(adminCard) adminCard.style.display = can.manage() ? '' : 'none';
+  { const _ac = document.getElementById('rAdminReceiptsCard');
+  if(_ac) _ac.style.display = can.manage() ? '' : 'none'; }
   // Show/hide tabs based on role
-  const settingsBtn = document.getElementById('rSettingsTabBtn');
-  const logBtn = document.getElementById('rLogTabBtn');
-  // Settings: admin only | Log: admin + supervisor
-  if(settingsBtn) settingsBtn.style.display = can.manage() ? '' : 'none';
-  if(logBtn) logBtn.style.display = can.edit() ? '' : 'none';
-  const adminCard = document.getElementById('rAdminReceiptsCard');
-  if(adminCard) adminCard.style.display = can.manage() ? '' : 'none';
+  (function(){ const sb=document.getElementById('rSettingsTabBtn'); const lb=document.getElementById('rLogTabBtn'); if(sb) sb.style.display=can.manage()?'':'none'; if(lb) lb.style.display=can.edit()?'':'none'; })();
+  (function(){ const el=document.getElementById('rAdminReceiptsCard'); if(el) el.style.display=can.manage()?'':'none'; })();
 };
 
 /* ════════ RECEIPT TAB SWITCHING ════════ */
@@ -4571,13 +4565,8 @@ window.switchRTab = function(name, btn){
   if(name==='r-tab-summary') rRenderSummary('week');
   if(name==='r-tab-settings') rInitSettingsForm();
   // Show/hide tabs based on role
-  const settingsBtn = document.getElementById('rSettingsTabBtn');
-  const logBtn = document.getElementById('rLogTabBtn');
-  // Settings: admin only | Log: admin + supervisor
-  if(settingsBtn) settingsBtn.style.display = can.manage() ? '' : 'none';
-  if(logBtn) logBtn.style.display = can.edit() ? '' : 'none';
-  const adminCard = document.getElementById('rAdminReceiptsCard');
-  if(adminCard) adminCard.style.display = can.manage() ? '' : 'none';
+  (function(){ const sb=document.getElementById('rSettingsTabBtn'); const lb=document.getElementById('rLogTabBtn'); if(sb) sb.style.display=can.manage()?'':'none'; if(lb) lb.style.display=can.edit()?'':'none'; })();
+  (function(){ const el=document.getElementById('rAdminReceiptsCard'); if(el) el.style.display=can.manage()?'':'none'; })();
 };
 
 /* ════════ PAYFOR TEMPLATES ════════ */
