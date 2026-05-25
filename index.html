@@ -4759,7 +4759,8 @@ function rAddToLog(){
 async function rSaveReceiptToFirebase(entry){
   try {
     const user = window._currentUser || window.currentUser;
-    if(!user || !window.db) { console.warn('Receipt save: no user or db'); return; }
+    console.log('🔥 Firebase save attempt:', { user: user?.email, db: !!window.db, entry: entry?.reg });
+    if(!user || !window.db) { console.warn('❌ Receipt save: no user or db', { user: !!user, db: !!window.db }); return; }
     const _add = window._fbAddDoc || addDoc;
     const _col = window._fbCollection || collection;
     const _ts  = window._fbServerTimestamp || serverTimestamp;
@@ -4769,7 +4770,8 @@ async function rSaveReceiptToFirebase(entry){
       createdByName: user.displayName || user.email,
       createdAt:     _ts()
     });
-  } catch(e){ console.warn('Firebase receipt save:', e.message); }
+    console.log('✅ Firebase receipt saved!');
+  } catch(e){ console.error('❌ Firebase receipt save error:', e.message, e); }
 }
 
 
